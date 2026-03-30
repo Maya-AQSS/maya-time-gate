@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -66,25 +67,50 @@ fun ManualIdentificationView(navController: NavHostController) {
 
 @Composable
 fun ManualIdentificationCompose(modifier: Modifier, onBackClick: () -> Unit, onManualClick: () -> Unit) {
+    var dni by remember{mutableStateOf("")}
+    var dniIsError by remember{mutableStateOf(false)}
+    var pass by remember{mutableStateOf("")}
+    var passIsError by remember{mutableStateOf(false)}
     Card(
         modifier = modifier.fillMaxSize().padding(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
     ) {
-
         BackRow(onBackClick = onBackClick)
-
         Column(
             modifier = Modifier.fillMaxSize().padding(32.dp),
         ) {
             TitleScreen()
             Spacer(modifier = Modifier.height(60.dp))
             Text("Documento de identidad (DNI/NIE)", style = MaterialTheme.typography.titleLarge)
-            IdentityTextField()
+            IdentityTextField(
+                isError = dniIsError,
+                onValueReady = { value ->
+                    dni = value
+                    if (dniIsError && value.length >= 8){
+                        dniIsError = false
+                    }
+                }
+            )
             Spacer(modifier = Modifier.height(30.dp))
             Text("Contraseña", style = MaterialTheme.typography.titleLarge)
-            PassTextField()
+            PassTextField(
+                isError = passIsError,
+                onValueReady = { value ->
+                    pass = value
+                }
+            )
             Spacer(modifier = Modifier.height(50.dp))
-            RegisterButton(onClick = onManualClick)
+            RegisterButton(
+                onClick = {
+                    if(dni.length >= 8 && pass.isNotEmpty()){
+                         onManualClick()
+                    }else{
+                        dniIsError = true
+                        passIsError = true
+                    }
+                }
+
+            )
         }
     }
 }
@@ -131,12 +157,15 @@ fun TitleScreen(){
 }
 
 @Composable
-fun IdentityTextField() {
+fun IdentityTextField(isError: Boolean, onValueReady: (String) -> Unit) {
     var textState by remember { mutableStateOf("") }
-
     OutlinedTextField(
         value = textState,
-        onValueChange = { textState = it },
+        onValueChange = {
+            textState = it
+            onValueReady(it)
+        },
+
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
@@ -155,32 +184,50 @@ fun IdentityTextField() {
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = Color.Black,
             unfocusedTextColor = Color.DarkGray,
+            errorTextColor = Color.Black,
             focusedBorderColor = Color(0xFF0D6DFB),
-            unfocusedBorderColor = Color.LightGray
+            unfocusedBorderColor = Color.LightGray,
+            errorBorderColor = Color.Red
         ),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         trailingIcon = {
-            if (textState.isNotEmpty()) { // Solo mostrar si hay texto
+            if (textState.isNotEmpty()) {
                 IconButton(onClick = { textState = "" }) {
                     Icon(
-                        imageVector = Icons.Default.Clear, // O Icons.Default.Close
+                        imageVector = Icons.Default.Clear,
                         contentDescription = "Borrar texto",
                         tint = Color.Black
                     )
                 }
             }
+            else if (isError) {
+                Icon(Icons.Default.Info, "Error", tint = MaterialTheme.colorScheme.error)
+            }
         },
-        singleLine = true
+        singleLine = true,
+        isError = isError,
+        supportingText = {
+            if (isError) {
+                Text(
+                    text = "El DNI debe tener al menos 8 números",
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        },
+
     )
 }
 
 @Composable
-fun PassTextField(){
+fun PassTextField(isError: Boolean, onValueReady: (String) ->Unit) {
     var textState by remember { mutableStateOf("") }
 
     OutlinedTextField(
         value = textState,
-        onValueChange = { textState = it },
+        onValueChange = {
+            textState = it
+            onValueReady(it)
+        },
         visualTransformation = PasswordVisualTransformation(),
         modifier = Modifier
             .fillMaxWidth()
@@ -200,21 +247,34 @@ fun PassTextField(){
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = Color.Black,
             unfocusedTextColor = Color.DarkGray,
+            errorTextColor = Color.Black,
             focusedBorderColor = Color(0xFF0D6DFB),
-            unfocusedBorderColor = Color.LightGray
+            unfocusedBorderColor = Color.LightGray,
+            errorBorderColor = Color.Red
         ),
         trailingIcon = {
-            if (textState.isNotEmpty()) { // Solo mostrar si hay texto
+            if (textState.isNotEmpty()) {
                 IconButton(onClick = { textState = "" }) {
                     Icon(
-                        imageVector = Icons.Default.Clear, // O Icons.Default.Close
+                        imageVector = Icons.Default.Clear,
                         contentDescription = "Borrar texto",
                         tint = Color.Black
                     )
                 }
+            }else if (isError) {
+                Icon(Icons.Default.Info, "Error", tint = MaterialTheme.colorScheme.error)
             }
         },
-        singleLine = true
+        singleLine = true,
+        isError = isError,
+        supportingText = {
+            if (isError) {
+                Text(
+                    text = "Introduce tu contraseña",
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        },
     )
 }
 

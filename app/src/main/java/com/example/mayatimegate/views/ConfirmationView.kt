@@ -38,8 +38,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ConfirmationView(navController: NavHostController, onTimeOver: () -> Unit) {
     LaunchedEffect(Unit) {
-        delay(5000) // Espera 5000 milisegundos (5 segundos)
-        onTimeOver() // Ejecuta la orden de volver
+        delay(5000)
+        onTimeOver()
     }
     Scaffold(
         containerColor = Color(0xFFEEECEB)
@@ -79,12 +79,12 @@ fun ConfirmationCompose(modifier: Modifier) {
 @Composable
 fun CircleImage() {
     Image(
-        painter = painterResource(id = R.drawable.ic_launcher_background), // Reemplaza con tu imagen
+        painter = painterResource(id = R.drawable.ic_launcher_background),
         contentDescription = "Descripción de la imagen",
         modifier = Modifier
-            .size(200.dp) // Define el tamaño del círculo (width y height)
-            .clip(CircleShape), // Recorta la imagen en forma de círculo
-        contentScale = ContentScale.Crop // Recorta la imagen para que rellene el círculo
+            .size(200.dp)
+            .clip(CircleShape),
+        contentScale = ContentScale.Crop
     )
 }
 
@@ -127,32 +127,4 @@ fun InformationalText(){
     }
 }
 
-@Preview
-@Composable
-fun prev(){
-    Scaffold(
-        containerColor = Color(0xFFEEECEB)
-    ) { innerPadding ->
-        ConfirmationCompose(
-            modifier = Modifier.padding(innerPadding)
-        )
-    }
-}
 
-
-//@Composable
-//fun prev(){
-//    Scaffold(
-//        containerColor = Color(0xFFEEECEB)
-//    ) { innerPadding ->
-//        ConfirmationCompose(
-//            modifier = Modifier.padding(innerPadding),
-//            onManualClick = {
-//                navController.navigate("manual_id") {
-//                    launchSingleTop = true
-//                    restoreState = true
-//                }
-//            }
-//        )
-//    }
-//}
