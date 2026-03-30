@@ -53,13 +53,19 @@ fun ManualIdentificationView(navController: NavHostController) {
                 if (navController.previousBackStackEntry != null) {
                     navController.popBackStack()
                 }
+            },
+            onManualClick = {
+                navController.navigate("confirmation"){
+                    launchSingleTop = true
+                    restoreState = true
+                }
             }
         )
     }
 }
 
 @Composable
-fun ManualIdentificationCompose(modifier: Modifier, onBackClick: () -> Unit) {
+fun ManualIdentificationCompose(modifier: Modifier, onBackClick: () -> Unit, onManualClick: () -> Unit) {
     Card(
         modifier = modifier.fillMaxSize().padding(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
@@ -73,12 +79,12 @@ fun ManualIdentificationCompose(modifier: Modifier, onBackClick: () -> Unit) {
             TitleScreen()
             Spacer(modifier = Modifier.height(60.dp))
             Text("Documento de identidad (DNI/NIE)", style = MaterialTheme.typography.titleLarge)
-            TextFieldIdentity()
+            IdentityTextField()
             Spacer(modifier = Modifier.height(30.dp))
             Text("Contraseña", style = MaterialTheme.typography.titleLarge)
-            TextFieldPass()
+            PassTextField()
             Spacer(modifier = Modifier.height(50.dp))
-            ButtonRegister()
+            RegisterButton(onClick = onManualClick)
         }
     }
 }
@@ -125,7 +131,7 @@ fun TitleScreen(){
 }
 
 @Composable
-fun TextFieldIdentity() {
+fun IdentityTextField() {
     var textState by remember { mutableStateOf("") }
 
     OutlinedTextField(
@@ -169,7 +175,7 @@ fun TextFieldIdentity() {
 }
 
 @Composable
-fun TextFieldPass(){
+fun PassTextField(){
     var textState by remember { mutableStateOf("") }
 
     OutlinedTextField(
@@ -213,11 +219,9 @@ fun TextFieldPass(){
 }
 
 @Composable
-fun ButtonRegister(){
+fun RegisterButton(onClick: () -> Unit){
     Card(
-        onClick = {
-            println("Tarjeta clickeada")
-        },
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth().
             padding(8.dp),

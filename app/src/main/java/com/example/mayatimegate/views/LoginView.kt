@@ -26,6 +26,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.mayatimegate.R
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
@@ -77,8 +78,6 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
                 color = Color.Gray.copy(alpha = 0.5f)
             )
             ManualOption(onClick = onManualClick)
-
-
         }
     }
 }
