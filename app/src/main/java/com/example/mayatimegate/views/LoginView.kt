@@ -26,7 +26,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.mayatimegate.R
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController

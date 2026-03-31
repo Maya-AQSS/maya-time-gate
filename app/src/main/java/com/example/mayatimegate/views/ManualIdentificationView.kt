@@ -5,7 +5,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,10 +37,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.mayatimegate.R
+
 
 @Composable
 fun ManualIdentificationView(navController: NavHostController) {
