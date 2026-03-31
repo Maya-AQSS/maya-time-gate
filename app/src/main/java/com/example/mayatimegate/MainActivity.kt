@@ -16,11 +16,14 @@ import com.example.mayatimegate.views.ManualIdentificationView
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge() // Habilita el diseño de borde a borde (detrás de las barras de sistema)
+
         setContent {
             MayaTimeGateTheme {
+                // Controlador central para gestionar el historial y cambio de pantallas
                 val navController = rememberNavController()
 
+                // Definición del grafo de navegación de la aplicación
                 NavHost(
                     navController = navController,
                     startDestination = "login"
@@ -34,23 +37,25 @@ class MainActivity : ComponentActivity() {
                         ManualIdentificationView(navController)
                     }
 
-                    composable("confirmation"){
+                    composable("confirmation") {
                         ConfirmationView(
                             onTimeOver = {
+                                // Redirección automática al inicio limpiando el historial previo
                                 navController.navigate("login") {
-                                    popUpTo("login") {
-                                        inclusive = true
-                                    }
+                                    popUpTo("login") { inclusive = true }
                                     launchSingleTop = true
                                 }
                             },
                         )
                     }
 
-                    composable("error"){
+                    composable("error") {
                         ErrorView(
                             onTimeOver = {
-                                navController.popBackStack()
+                                navController.navigate("login") {
+                                    popUpTo("login") { inclusive = true }
+                                    launchSingleTop = true
+                                }
                             },
                             navController = navController
                         )
@@ -60,5 +65,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
