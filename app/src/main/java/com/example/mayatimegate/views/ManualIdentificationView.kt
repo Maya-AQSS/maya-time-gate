@@ -1,39 +1,29 @@
 package com.example.mayatimegate.views
 
+import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.mayatimegate.R
+
+/**
+ * Vista de Identificación Manual.
+ * Permite al usuario fichar introduciendo DNI y contraseña si no dispone de tarjeta.
+ */
 @Composable
 fun ManualIdentificationView(navController: NavHostController) {
     Scaffold(
@@ -42,39 +32,89 @@ fun ManualIdentificationView(navController: NavHostController) {
         ManualIdentificationCompose(
             modifier = Modifier.padding(innerPadding),
             onBackClick = {
+                // Navegación segura hacia atrás comprobando la pila
                 if (navController.previousBackStackEntry != null) {
                     navController.popBackStack()
+                }
+            },
+            onManualClick = {
+                navController.navigate("confirmation") {
+                    launchSingleTop = true
+                    restoreState = true
                 }
             }
         )
     }
 }
 
+/**
+ * Orquestador de la lógica de formulario y validación.
+ */
 @Composable
-fun ManualIdentificationCompose(modifier: Modifier, onBackClick: () -> Unit) {
+fun ManualIdentificationCompose(modifier: Modifier, onBackClick: () -> Unit, onManualClick: () -> Unit) {
+    // Estados para almacenar los valores de entrada
+    var dni by remember { mutableStateOf("") }
+    var pass by remember { mutableStateOf("") }
+
+    // Estados para controlar la visualización de errores
+    var dniIsError by remember { mutableStateOf(false) }
+    var passIsError by remember { mutableStateOf(false) }
+
     Card(
         modifier = modifier.fillMaxSize().padding(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
     ) {
-
         BackRow(onBackClick = onBackClick)
 
         Column(
             modifier = Modifier.fillMaxSize().padding(32.dp),
         ) {
             TitleScreen()
+
             Spacer(modifier = Modifier.height(60.dp))
+
             Text("Documento de identidad (DNI/NIE)", style = MaterialTheme.typography.titleLarge)
-            TextFieldIdentity()
+            IdentityTextField(
+                isError = dniIsError,
+                onValueReady = { value ->
+                    dni = value
+                    // Limpieza dinámica del error si el usuario corrige el dato
+                    if (dniIsError && value.length >= 8) dniIsError = false
+                }
+            )
+
             Spacer(modifier = Modifier.height(30.dp))
+
             Text("Contraseña", style = MaterialTheme.typography.titleLarge)
-            TextFieldPass()
+            PassTextField(
+                isError = passIsError,
+                onValueReady = { value ->
+                    pass = value
+                    if (passIsError && value.isNotEmpty()) passIsError = false
+                }
+            )
+
             Spacer(modifier = Modifier.height(50.dp))
-            ButtonRegister()
+
+            RegisterButton(
+                onClick = {
+                    // Lógica de validación antes de proceder al registro
+                    if (dni.length >= 8 && pass.isNotEmpty()) {
+                        onManualClick()
+                    } else {
+                        // Activación de estados de error para feedback visual
+                        dniIsError = dni.length < 8
+                        passIsError = pass.isEmpty()
+                    }
+                }
+            )
         }
     }
 }
 
+/**
+ * Botón de retroceso personalizado con área de clic extendida.
+ */
 @Composable
 fun BackRow(onBackClick: () -> Unit) {
     Row(
@@ -86,7 +126,7 @@ fun BackRow(onBackClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painterResource(R.drawable.ic_arrow_back),
+            painter = painterResource(R.drawable.ic_arrow_back),
             contentDescription = "Volver",
             modifier = Modifier.size(30.dp)
         )
@@ -94,129 +134,137 @@ fun BackRow(onBackClick: () -> Unit) {
         Text("Volver", style = MaterialTheme.typography.bodyLarge)
     }
 }
+
 @Composable
-fun TitleScreen(){
+fun TitleScreen() {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(8.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
-    ){
+    ) {
         Text(
-            "Identificación Manual",
+            text = "Identificación Manual",
             color = Color(0xFF0D6DFB),
             style = MaterialTheme.typography.displayLarge
         )
         Text(
-            "Introduce tus credenciales para fichar",
+            text = "Introduce tus credenciales para fichar",
             style = MaterialTheme.typography.displaySmall
         )
     }
-
 }
 
-
-
+/**
+ * Campo de texto especializado para DNI con teclado numérico.
+ */
 @Composable
-fun TextFieldIdentity() {
+fun IdentityTextField(isError: Boolean, onValueReady: (String) -> Unit) {
     var textState by remember { mutableStateOf("") }
 
     OutlinedTextField(
         value = textState,
-        onValueChange = { textState = it },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        placeholder = {
-            Text(text = "Ej: 12345678A", color = Color.Gray, style = MaterialTheme.typography.titleMedium)
+        onValueChange = {
+            textState = it
+            onValueReady(it)
         },
+        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        placeholder = { Text("Ej: 12345678", color = Color.Gray) },
         leadingIcon = {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_badge),
-                contentDescription = "Icono identidad",
-                modifier = Modifier.size(35.dp),
-                tint = Color.Black
-            )
+            Icon(painterResource(R.drawable.ic_badge), null, Modifier.size(35.dp))
         },
+        trailingIcon = {
+            // Prioridad: Icono de borrar si hay texto, si no, icono de error
+            if (textState.isNotEmpty()) {
+                IconButton(onClick = {
+                    textState = ""
+                    onValueReady("")
+                }) {
+                    Icon(Icons.Default.Clear, "Borrar")
+                }
+            } else if (isError) {
+                Icon(Icons.Default.Info, "Error", tint = MaterialTheme.colorScheme.error)
+            }
+        },
+        isError = isError,
+        supportingText = {
+            if (isError) Text("El DNI debe tener al menos 8 números")
+        },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Color.Black,
-            unfocusedTextColor = Color.DarkGray,
-            focusedBorderColor = Color(0xFF0D6DFB),
-            unfocusedBorderColor = Color.LightGray
+            errorTextColor = Color.Black, // Mantiene el color del texto aunque haya error
+            errorBorderColor = Color.Red
         ),
         singleLine = true
     )
 }
 
+/**
+ * Campo de texto para contraseña con transformación visual de seguridad.
+ */
 @Composable
-fun TextFieldPass(){
+fun PassTextField(isError: Boolean, onValueReady: (String) -> Unit) {
     var textState by remember { mutableStateOf("") }
 
     OutlinedTextField(
         value = textState,
-        onValueChange = { textState = it },
+        onValueChange = {
+            textState = it
+            onValueReady(it)
+        },
         visualTransformation = PasswordVisualTransformation(),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        placeholder = {
-            Text(text = "Tu contraseña de Odoo", color = Color.Gray, style = MaterialTheme.typography.titleMedium)
-        },
+        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        placeholder = { Text("Tu contraseña de Odoo", color = Color.Gray) },
         leadingIcon = {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_lock),
-                contentDescription = "Icono identidad",
-                modifier = Modifier.size(35.dp),
-                tint = Color.Black
-            )
+            Icon(painterResource(R.drawable.ic_lock), null, Modifier.size(35.dp))
+        },
+        trailingIcon = {
+            if (textState.isNotEmpty()) {
+                IconButton(onClick = {
+                    textState = ""
+                    onValueReady("")
+                }) {
+                    Icon(Icons.Default.Clear, "Borrar")
+                }
+            } else if (isError) {
+                Icon(Icons.Default.Info, "Error", tint = MaterialTheme.colorScheme.error)
+            }
+        },
+        isError = isError,
+        supportingText = {
+            if (isError) Text("Introduce tu contraseña")
         },
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Color.Black,
-            unfocusedTextColor = Color.DarkGray,
-            focusedBorderColor = Color(0xFF0D6DFB),
-            unfocusedBorderColor = Color.LightGray
+            errorTextColor = Color.Black,
+            errorBorderColor = Color.Red
         ),
         singleLine = true
     )
 }
 
+/**
+ * Botón de confirmación de registro.
+ */
 @Composable
-fun ButtonRegister(){
+fun RegisterButton(onClick: () -> Unit) {
     Card(
-        onClick = {
-            println("Tarjeta clickeada")
-        },
-        modifier = Modifier
-            .fillMaxWidth().
-            padding(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF34495E),
-        ),
-    ){
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF34495E)),
+    ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
-        ){
-            Image(
-                painterResource(R.drawable.ic_register),
-                contentDescription = "Imagen teclado",
-                modifier = Modifier.size(25.dp)
-            )
+        ) {
+            Image(painterResource(R.drawable.ic_register), null, Modifier.size(25.dp))
             Spacer(modifier = Modifier.size(12.dp))
             Text(
-                "Registrar Fichaje",
+                text = "Registrar Fichaje",
                 style = MaterialTheme.typography.titleLarge,
-                color = Color(0xFFFDFDFD)
+                color = Color.White
             )
         }
     }
-
 }
-

@@ -2,21 +2,8 @@ package com.example.mayatimegate.views
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,14 +17,18 @@ import com.example.mayatimegate.R
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
 
+/**
+ * Punto de entrada principal de la aplicación (Pantalla de Fichaje).
+ */
 @Composable
 fun LoginView(navController: NavHostController) {
     Scaffold(
-        containerColor = Color(0xFFEEECEB)
+        containerColor = Color(0xFFEEECEB) // Fondo neutro para resaltar la tarjeta central
     ) { innerPadding ->
         LoginCompose(
             modifier = Modifier.padding(innerPadding),
             onManualClick = {
+                // Navegación hacia el formulario manual manteniendo el estado de la pila
                 navController.navigate("manual_id") {
                     launchSingleTop = true
                     restoreState = true
@@ -47,42 +38,57 @@ fun LoginView(navController: NavHostController) {
     }
 }
 
+/**
+ * Contenedor principal que organiza los elementos visuales de la pantalla de inicio.
+ */
 @Composable
 fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFFDFDFD),
-        ),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column (
-            modifier = Modifier.fillMaxSize().padding(40.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(40.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
-        ){
+        ) {
             Image(
-                painterResource(R.drawable.logo_ceedcv),
-                contentDescription = "Imagen tarjeta",
+                painter = painterResource(R.drawable.logo_ceedcv),
+                contentDescription = "Logo Institucional",
                 modifier = Modifier.size(200.dp)
             )
+
             Spacer(modifier = Modifier.height(10.dp))
-            CurrentTime()
+
+            CurrentTime() // Visualización de hora en tiempo real
+
             Spacer(modifier = Modifier.height(15.dp))
-            CurrentDate()
+
+            CurrentDate() // Fecha actual formateada
+
             Spacer(modifier = Modifier.height(40.dp))
-            CardOption()
+
+            CardOption() // Instrucción visual para el uso de tarjeta NFC/RFID
+
             HorizontalDivider(
-                modifier = Modifier.padding(vertical = 8.dp, horizontal = 25.dp),
+                modifier = Modifier.padding(vertical = 16.dp, horizontal = 25.dp),
                 thickness = 1.dp,
-                color = Color.Gray.copy(alpha = 0.5f)
+                color = Color.Gray.copy(alpha = 0.3f)
             )
-            ManualOption(onClick = onManualClick)
 
-
+            ManualOption(onClick = onManualClick) // Acceso alternativo por teclado
         }
     }
 }
 
+/**
+ * Integra un TextClock nativo de Android para asegurar precisión y bajo consumo de recursos.
+ */
 @Composable
 fun CurrentTime() {
     AndroidView(
@@ -90,10 +96,8 @@ fun CurrentTime() {
             android.widget.TextClock(context).apply {
                 format12Hour = "HH:mm"
                 format24Hour = "HH:mm"
-
                 textSize = 50f
                 setTextColor(android.graphics.Color.BLACK)
-
                 gravity = android.view.Gravity.CENTER
             }
         },
@@ -101,29 +105,34 @@ fun CurrentTime() {
     )
 }
 
+/**
+ * Muestra la fecha del sistema formateada para el ámbito local (España).
+ */
 @Composable
-fun CurrentDate(){
+fun CurrentDate() {
     val date = LocalDate.now()
-    val formatt = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("es", "ES"))
-    val currentDate = date.format(formatt)
+    // Ejemplo: "lunes, 31 de marzo"
+    val formatter = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("es", "ES"))
+    val currentDate = date.format(formatter)
+
     Text(
-        currentDate,
+        text = currentDate.replaceFirstChar { it.uppercase() }, // Capitaliza el día de la semana
         style = MaterialTheme.typography.headlineLarge
     )
 }
 
+/**
+ * Panel informativo que indica al usuario cómo interactuar con el lector físico.
+ */
 @Composable
-fun CardOption(){
+fun CardOption() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-
         border = BorderStroke(2.dp, Color(0xFFE1E5E8)),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF6F7F8),
-        ),
-    ){
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF6F7F8)),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -132,22 +141,26 @@ fun CardOption(){
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
-                painterResource(R.drawable.ic_badge),
-                contentDescription = "Imagen tarjeta",
+                painter = painterResource(R.drawable.ic_badge),
+                contentDescription = "Icono Tarjeta",
                 modifier = Modifier.size(150.dp)
             )
             Text(
-                "Acerca tu tarjeta al lector",
+                text = "Acerca tu tarjeta al lector",
                 style = MaterialTheme.typography.titleLarge
             )
             Text(
-                "El sistema registrará tu entrada automaticamente",
-                style = MaterialTheme.typography.titleMedium
+                text = "El sistema registrará tu entrada automáticamente",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Gray
             )
         }
     }
 }
 
+/**
+ * Botón de acción secundaria para usuarios sin tarjeta física.
+ */
 @Composable
 fun ManualOption(onClick: () -> Unit) {
     Card(
@@ -155,29 +168,27 @@ fun ManualOption(onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp, 16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF34495E),
-        ),
-    ){
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF34495E)), // Color de contraste oscuro
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
-        ){
-            Image(
-                painterResource(R.drawable.ic_keyboard),
-                contentDescription = "Imagen teclado",
-                modifier = Modifier.size(50.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_keyboard),
+                contentDescription = "Icono Teclado",
+                modifier = Modifier.size(30.dp),
+                tint = Color.White
             )
-            Spacer(modifier = Modifier.size(8.dp))
+            Spacer(modifier = Modifier.size(12.dp))
             Text(
-                "Identificación Manual (DNI/Clave)",
+                text = "Identificación Manual (DNI/Clave)",
                 style = MaterialTheme.typography.titleLarge,
-                color = Color(0xFFFDFDFD)
+                color = Color.White
             )
         }
     }
 }
-
