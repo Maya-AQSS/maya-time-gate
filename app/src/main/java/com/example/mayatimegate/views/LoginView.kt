@@ -3,8 +3,11 @@ package com.example.mayatimegate.views
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,6 +19,14 @@ import androidx.compose.ui.res.painterResource
 import com.example.mayatimegate.R
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.*
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import kotlinx.coroutines.delay
 
 /**
  * Punto de entrada principal de la aplicación (Pantalla de Fichaje).
@@ -33,6 +44,13 @@ fun LoginView(navController: NavHostController) {
                     launchSingleTop = true
                     restoreState = true
                 }
+            },
+            // Navegacion hacia la ventana de confirmacion
+            {
+                navController.navigate("confirmation") {
+                    launchSingleTop = true
+                    restoreState = true
+                }
             }
         )
     }
@@ -42,7 +60,7 @@ fun LoginView(navController: NavHostController) {
  * Contenedor principal que organiza los elementos visuales de la pantalla de inicio.
  */
 @Composable
-fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
+fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit, navigate: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -82,9 +100,11 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
             )
 
             ManualOption(onClick = onManualClick) // Acceso alternativo por teclado
+            RfidScanner(onClick = navigate) // Para capturar el codigo del sensor y realizar fichaje
         }
     }
 }
+
 
 /**
  * Integra un TextClock nativo de Android para asegurar precisión y bajo consumo de recursos.
@@ -154,6 +174,7 @@ fun CardOption() {
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.Gray
             )
+
         }
     }
 }
@@ -191,4 +212,49 @@ fun ManualOption(onClick: () -> Unit) {
             )
         }
     }
+
+}
+
+/**
+ * Contenedor invisible donde va el codigo
+ */
+@Composable
+fun RfidScanner(onClick: () -> Unit){
+    var codeRFID by remember { mutableStateOf("") }
+    var buffer by remember { mutableStateOf("") }
+
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    // BUCLE DE ENFOQUE: Mantiene el cursor en el campo invisible para recibir al sensor
+    LaunchedEffect(Unit) {
+        while (true) {
+            focusRequester.requestFocus()
+            keyboardController?.hide() // Intenta esconder el teclado si se asoma
+            delay(500) // Re-enfoca cada medio segundo
+        }
+    }
+
+    BasicTextField( //Text field donde se guarda el codigo
+        value = buffer,
+        onValueChange = { nuevoValor ->
+            focusRequester.requestFocus()
+            keyboardController?.hide()
+            // El sensor suele enviar el ID seguido de un salto de línea (\n)
+            if (nuevoValor.contains("\n")) {
+                codeRFID = nuevoValor.trim() // Guardamos el ID limpio
+                buffer = ""               // Vaciamos el buffer para la siguiente
+                onClick() //navega a otra ventana
+
+            } else {
+                buffer = nuevoValor       // Vamos acumulando los números
+            }
+        },
+        modifier = Modifier //Ocultamos el textfield
+            .size(1.dp)
+            .alpha(0f)
+            .focusRequester(focusRequester),
+        keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
+        interactionSource = remember { MutableInteractionSource() }
+    )
 }
