@@ -6,30 +6,41 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.mayatimegate.R
+import kotlinx.coroutines.delay
 
 /**
  * Vista de Identificación Manual.
  * Permite al usuario fichar introduciendo DNI y contraseña si no dispone de tarjeta.
  */
 @Composable
-fun ManualIdentificationView(navController: NavHostController) {
+fun ManualIdentificationView(navController: NavHostController, onTimeOver: () -> Unit) {
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
-        ManualIdentificationCompose(
+        InactivityTimer(
+            8000L,
+            onTimeout = onTimeOver,
             modifier = Modifier.padding(innerPadding),
             onBackClick = {
                 // Navegación segura hacia atrás comprobando la pila
@@ -47,11 +58,52 @@ fun ManualIdentificationView(navController: NavHostController) {
     }
 }
 
+@Composable
+fun InactivityTimer(
+    timeoutMillis: Long = 10000L,
+    onTimeout: () -> Unit,
+    modifier: Modifier,
+    onBackClick: () -> Unit,
+    onManualClick: () -> Unit
+
+) {
+    // Usamos un State simple para el reinicio
+    var interactionCount by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(interactionCount) {
+        delay(timeoutMillis)
+        onTimeout()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    awaitFirstDown() // Detecta el primer contacto
+                    interactionCount++ // Reinicia el timer
+                }
+            }
+    ) {
+        ManualIdentificationCompose(
+            modifier = modifier,
+            onBackClick = onBackClick,
+            onManualClick = onManualClick,
+            onActivity = { interactionCount++ }
+        )
+    }
+}
+
 /**
  * Orquestador de la lógica de formulario y validación.
  */
 @Composable
-fun ManualIdentificationCompose(modifier: Modifier, onBackClick: () -> Unit, onManualClick: () -> Unit) {
+fun ManualIdentificationCompose(
+    modifier: Modifier,
+    onBackClick: () -> Unit,
+    onManualClick: () -> Unit,
+    onActivity: () -> Unit
+) {
     // Estados para almacenar los valores de entrada
     var dni by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
@@ -60,6 +112,7 @@ fun ManualIdentificationCompose(modifier: Modifier, onBackClick: () -> Unit, onM
     var dniIsError by remember { mutableStateOf(false) }
     var passIsError by remember { mutableStateOf(false) }
 
+    val focusManager = LocalFocusManager.current
     Card(
         modifier = modifier.fillMaxSize().padding(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
@@ -77,10 +130,15 @@ fun ManualIdentificationCompose(modifier: Modifier, onBackClick: () -> Unit, onM
             IdentityTextField(
                 isError = dniIsError,
                 onValueReady = { value ->
+                    onActivity()
                     dni = value
                     // Limpieza dinámica del error si el usuario corrige el dato
                     if (dniIsError && value.length >= 8) dniIsError = false
-                }
+
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                focusManager = focusManager
             )
 
             Spacer(modifier = Modifier.height(30.dp))
@@ -89,9 +147,11 @@ fun ManualIdentificationCompose(modifier: Modifier, onBackClick: () -> Unit, onM
             PassTextField(
                 isError = passIsError,
                 onValueReady = { value ->
+                    onActivity()
                     pass = value
                     if (passIsError && value.isNotEmpty()) passIsError = false
-                }
+                },
+                focusManager = focusManager
             )
 
             Spacer(modifier = Modifier.height(50.dp))
@@ -149,7 +209,7 @@ fun TitleScreen() {
         )
         Text(
             text = "Introduce tus credenciales para fichar",
-            style = MaterialTheme.typography.displaySmall
+            style = MaterialTheme.typography.titleLarge
         )
     }
 }
@@ -158,7 +218,13 @@ fun TitleScreen() {
  * Campo de texto especializado para DNI con teclado numérico.
  */
 @Composable
-fun IdentityTextField(isError: Boolean, onValueReady: (String) -> Unit) {
+fun IdentityTextField(
+    isError: Boolean,
+    onValueReady: (String) -> Unit,
+    focusManager: FocusManager,
+    keyboardOptions: KeyboardOptions,
+    keyboardActions: KeyboardActions
+) {
     var textState by remember { mutableStateOf("") }
 
     OutlinedTextField(
@@ -189,13 +255,28 @@ fun IdentityTextField(isError: Boolean, onValueReady: (String) -> Unit) {
         supportingText = {
             if (isError) Text("El DNI debe tener al menos 8 números")
         },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        keyboardOptions = keyboardOptions,
+        keyboardActions = KeyboardActions(
+            onNext = {
+                focusManager.moveFocus(FocusDirection.Down) // Mueve el foco al siguiente campo
+            }
+        ),
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            errorTextColor = Color.Black, // Mantiene el color del texto aunque haya error
-            errorBorderColor = Color.Red
+            focusedTextColor = Color.Black,
+            unfocusedTextColor = Color.Black,
+            errorTextColor = Color.Black,
+            errorBorderColor = Color.Red,
+            focusedLeadingIconColor = Color.Black,
+            unfocusedLeadingIconColor = Color.Black,
+            focusedTrailingIconColor = Color.Black,
+            unfocusedTrailingIconColor = Color.Black,
+            errorLeadingIconColor = Color.Black,
+            errorTrailingIconColor = Color.Black,
+            errorLabelColor = Color.Red
         ),
         singleLine = true
+
     )
 }
 
@@ -203,7 +284,7 @@ fun IdentityTextField(isError: Boolean, onValueReady: (String) -> Unit) {
  * Campo de texto para contraseña con transformación visual de seguridad.
  */
 @Composable
-fun PassTextField(isError: Boolean, onValueReady: (String) -> Unit) {
+fun PassTextField(isError: Boolean, onValueReady: (String) -> Unit, focusManager: FocusManager) {
     var textState by remember { mutableStateOf("") }
 
     OutlinedTextField(
@@ -218,6 +299,16 @@ fun PassTextField(isError: Boolean, onValueReady: (String) -> Unit) {
         leadingIcon = {
             Icon(painterResource(R.drawable.ic_lock), null, Modifier.size(35.dp))
         },
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done // Cambia el botón a "Hecho"
+        ),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                focusManager.clearFocus() // Esconde el teclado
+                // Opcional: podrías llamar aquí a la lógica de validación
+            }
+        ),
         trailingIcon = {
             if (textState.isNotEmpty()) {
                 IconButton(onClick = {
@@ -236,8 +327,17 @@ fun PassTextField(isError: Boolean, onValueReady: (String) -> Unit) {
         },
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = Color.Black,
+            unfocusedTextColor = Color.Black,
             errorTextColor = Color.Black,
-            errorBorderColor = Color.Red
+            errorBorderColor = Color.Red,
+            focusedLeadingIconColor = Color.Black,
+            unfocusedLeadingIconColor = Color.Black,
+            focusedTrailingIconColor = Color.Black,
+            unfocusedTrailingIconColor = Color.Black,
+            errorLeadingIconColor = Color.Black,
+            errorTrailingIconColor = Color.Black,
+            errorLabelColor = Color.Red
         ),
         singleLine = true
     )

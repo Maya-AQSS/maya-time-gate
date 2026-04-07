@@ -34,7 +34,13 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("manual_id") {
-                        ManualIdentificationView(navController)
+                        ManualIdentificationView(
+                            onTimeOver = {
+                                navController.popBackStack()
+                            },
+
+                            navController = navController
+                        )
                     }
 
                     composable("confirmation") {
