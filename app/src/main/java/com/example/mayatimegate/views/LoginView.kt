@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import kotlinx.coroutines.delay
@@ -100,7 +101,7 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit, navigate: () -> 
             )
 
             ManualOption(onClick = onManualClick) // Acceso alternativo por teclado
-            RfidScanner(onClick = navigate) // Para capturar el codigo del sensor y realizar fichaje
+            //RfidScanner(onClick = navigate) // Para capturar el codigo del sensor y realizar fichaje
         }
     }
 }
@@ -188,7 +189,8 @@ fun ManualOption(onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp, 16.dp),
+            .padding(8.dp, 16.dp)
+            .focusProperties { canFocus = false },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF34495E)), // Color de contraste oscuro
     ) {
         Row(
@@ -213,48 +215,4 @@ fun ManualOption(onClick: () -> Unit) {
         }
     }
 
-}
-
-/**
- * Contenedor invisible donde va el codigo
- */
-@Composable
-fun RfidScanner(onClick: () -> Unit){
-    var codeRFID by remember { mutableStateOf("") }
-    var buffer by remember { mutableStateOf("") }
-
-    val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    // BUCLE DE ENFOQUE: Mantiene el cursor en el campo invisible para recibir al sensor
-    LaunchedEffect(Unit) {
-        while (true) {
-            focusRequester.requestFocus()
-            keyboardController?.hide() // Intenta esconder el teclado si se asoma
-            delay(500) // Re-enfoca cada medio segundo
-        }
-    }
-
-    BasicTextField( //Text field donde se guarda el codigo
-        value = buffer,
-        onValueChange = { nuevoValor ->
-            focusRequester.requestFocus()
-            keyboardController?.hide()
-            // El sensor suele enviar el ID seguido de un salto de línea (\n)
-            if (nuevoValor.contains("\n")) {
-                codeRFID = nuevoValor.trim() // Guardamos el ID limpio
-                buffer = ""               // Vaciamos el buffer para la siguiente
-                onClick() //navega a otra ventana
-
-            } else {
-                buffer = nuevoValor       // Vamos acumulando los números
-            }
-        },
-        modifier = Modifier //Ocultamos el textfield
-            .size(1.dp)
-            .alpha(0f)
-            .focusRequester(focusRequester),
-        keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
-        interactionSource = remember { MutableInteractionSource() }
-    )
 }
