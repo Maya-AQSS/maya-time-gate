@@ -7,19 +7,10 @@ data class EmployeeResponse(
     @SerializedName("id_odoo")
     val odooId: Int?,
     @SerializedName("nombre")
-    val name: String?,
+    val name: String,
     @SerializedName("apellidos")
-    val surname: String?,
+    val surname: String,
     val dni: String?,
-    var rfid: String?,
     val imageUrl:String?,
-    val message:String?,
-    var isSigned: Boolean = false,
-    var isDoubleSigned: Boolean? = null,
-    var isLate: Boolean? = null
-){
-    /*fun changeSignedState(){
-        this.isSigned =  !isSigned
-    }*/
-
-}
+    val message:String?
+)
