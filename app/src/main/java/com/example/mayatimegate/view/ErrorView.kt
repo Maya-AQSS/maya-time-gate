@@ -12,18 +12,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mayatimegate.R
 import androidx.navigation.NavHostController
+import com.example.mayatimegate.viewmodel.EmployeeViewModel
 import kotlinx.coroutines.delay
 
 /**
  * Vista de error que gestiona el ciclo de vida y la navegación automática.
  */
 @Composable
-fun ErrorView(navController: NavHostController, onTimeOver: () -> Unit) {
+fun ErrorView(navController: NavHostController, onTimeOver: () -> Unit, viewModel: EmployeeViewModel) {
     // Temporizador de seguridad: redirige al login tras 4 segundos de inactividad
     LaunchedEffect(Unit) {
         delay(4000)
+        viewModel.resetData()
+        delay(100)
         onTimeOver()
     }
 
@@ -108,7 +112,7 @@ fun ErrorText() {
         Text(
             text = "¡Identificación no válida!",
             color = Color(0xFFDD4150),
-            style = MaterialTheme.typography.displayLarge
+            style = MaterialTheme.typography.displayMedium
         )
 
         Spacer(modifier = Modifier.size(20.dp))

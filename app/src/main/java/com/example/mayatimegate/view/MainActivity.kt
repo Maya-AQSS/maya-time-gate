@@ -6,11 +6,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mayatimegate.ui.theme.MayaTimeGateTheme
+import com.example.mayatimegate.viewmodel.EmployeeViewModel
 
 class MainActivity : ComponentActivity() {
     private val rfidBuffer = StringBuilder()
@@ -18,6 +20,10 @@ class MainActivity : ComponentActivity() {
     private var RFIDCode = mutableStateOf("")
 
     private lateinit var navController: NavHostController
+
+    private val employeeViewModel: EmployeeViewModel by lazy {
+        ViewModelProvider(this)[EmployeeViewModel::class.java]
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,7 +41,10 @@ class MainActivity : ComponentActivity() {
                 ) {
 
                     composable("login") {
-                        LoginView(navController)
+                        LoginView(
+                            navController,
+                            viewModel  = employeeViewModel // <-- Esta es la conexión clave
+                        )
                     }
 
                     composable("manual_id") {
@@ -56,7 +65,10 @@ class MainActivity : ComponentActivity() {
                                     popUpTo("login") { inclusive = true }
                                     launchSingleTop = true
                                 }
+
                             },
+                            navController = navController,
+                            viewModel = employeeViewModel // <-- Esta es la conexión clave
                         )
                     }
 
@@ -68,7 +80,8 @@ class MainActivity : ComponentActivity() {
                                     launchSingleTop = true
                                 }
                             },
-                            navController = navController
+                            navController = navController,
+                            viewModel = employeeViewModel
                         )
                     }
                 }
@@ -108,6 +121,7 @@ class MainActivity : ComponentActivity() {
             if (navController.currentDestination?.route == "login") {
                 //navegamos a la pantalla de confirmacion
                 navController.navigate("confirmation") {
+                    employeeViewModel.searchByRfid(id)
                     launchSingleTop = true
                 }
             }

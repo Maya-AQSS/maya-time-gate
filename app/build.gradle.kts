@@ -73,4 +73,5 @@ dependencies {
     implementation("io.coil-kt:coil:2.4.0")
     // Esto es para el viewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+    implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
 }
