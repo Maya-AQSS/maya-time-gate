@@ -1,4 +1,4 @@
-package com.example.mayatimegate.views
+package com.example.mayatimegate.view
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.mayatimegate.R
 import kotlinx.coroutines.delay
@@ -38,7 +37,7 @@ fun ConfirmationView(onTimeOver: () -> Unit) {
 
     // Temporizador de visualización: 1.5 segundos son ideales para un feedback rápido
     LaunchedEffect(Unit) {
-        delay(1500)
+       delay(1500)
         onTimeOver()
     }
 
@@ -57,7 +56,7 @@ fun ConfirmationView(onTimeOver: () -> Unit) {
 @Composable
 fun ConfirmationCompose(modifier: Modifier) {
 
-    val user = User("Santi Selva", null)
+    val user = User("Santi Selva", "https://avatars.githubusercontent.com/u/1?v=4")
 
     Card(
         modifier = Modifier.fillMaxSize().padding(32.dp),
@@ -113,6 +112,10 @@ fun CircleImage(user:User) {
             AsyncImage(
                 model = user.url,
                 contentDescription = "Foto de perfil",
+                placeholder = painterResource(R.drawable.logo_ceedcv), // Una imagen gris o logo
+                error = painterResource(R.drawable.ic_replay), // Una imagen de aviso
+                onLoading = { println("Coil: Cargando...") },
+                onError = { error -> println("Coil error: ${error.result.throwable}") },
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
