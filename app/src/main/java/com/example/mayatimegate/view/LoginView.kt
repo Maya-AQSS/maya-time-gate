@@ -5,6 +5,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,12 +20,30 @@ import com.example.mayatimegate.R
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
 import androidx.compose.ui.focus.focusProperties
+import com.example.mayatimegate.viewmodel.EmployeeViewModel
 
 /**
  * Punto de entrada principal de la aplicación (Pantalla de Fichaje).
  */
 @Composable
-fun LoginView(navController: NavHostController) {
+fun LoginView(navController: NavHostController, viewModel: EmployeeViewModel) {
+    val empleado by viewModel.employeeInfo.observeAsState()
+    val error by viewModel.errorMessage.observeAsState()
+
+    // Este bloque se ejecuta cada vez que 'empleado' o 'error' cambian
+    LaunchedEffect(empleado, error) {
+        // Solo disparamos la navegación si esta pantalla es la que está "arriba"
+        val isAtLogin = navController.currentDestination?.route == "login"
+
+        if (isAtLogin) {
+            if (empleado != null) {
+                navController.navigate("confirmation")
+            } else if (error != null) {
+                navController.navigate("error")
+            }
+        }
+    }
+
     Scaffold(
         containerColor = Color(0xFFEEECEB) // Fondo neutro para resaltar la tarjeta central
     ) { innerPadding ->
