@@ -1,4 +1,4 @@
-package com.example.mayatimegate.views
+package com.example.mayatimegate.view
 
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons

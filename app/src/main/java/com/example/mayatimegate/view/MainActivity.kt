@@ -1,29 +1,16 @@
-package com.example.mayatimegate
+package com.example.mayatimegate.view
 
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.mutableStateOf
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mayatimegate.ui.theme.MayaTimeGateTheme
-import com.example.mayatimegate.views.ConfirmationView
-import com.example.mayatimegate.views.ErrorView
-import com.example.mayatimegate.views.LoginView
-import com.example.mayatimegate.views.ManualIdentificationView
-
-
-import android.util.Log
-import android.view.KeyEvent
-
-
-import androidx.compose.foundation.layout.*
-
-import androidx.compose.material3.*
-import androidx.compose.runtime.mutableStateOf
-import androidx.navigation.NavHostController
-
 
 class MainActivity : ComponentActivity() {
     private val rfidBuffer = StringBuilder()

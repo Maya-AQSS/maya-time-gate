@@ -1,4 +1,4 @@
-package com.example.mayatimegate.views
+package com.example.mayatimegate.view
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
