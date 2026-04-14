@@ -12,6 +12,6 @@ interface OdooApi{ // interface con metodo que busca al empleado por su rfid
 
     @GET("api/empleado_dni/{dni}") //Api para buscar por dni
     fun getEmployeeByDni(
-        @Path("dni") dni: Int
+        @Path("dni") dni: String
     ): Call<EmployeeResponse>
 }
