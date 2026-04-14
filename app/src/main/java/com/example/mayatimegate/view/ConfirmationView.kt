@@ -45,7 +45,7 @@ fun ConfirmationView(
 
     // Temporizador de visualizacion
     LaunchedEffect(Unit) {
-       delay(30000)
+       delay(1600)
         viewModel.resetData()
         onTimeOver()
     }

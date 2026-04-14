@@ -172,7 +172,7 @@ fun ManualIdentificationCompose(
                         onManualClick(stringDni)
                     } else {
                         // Activación de estados de error para feedback visual
-                        dniIsError = stringDni.length < 8
+                        dniIsError = stringDni.length != 8
                         passIsError = pass.isEmpty()
                     }
                 }
@@ -262,7 +262,7 @@ fun IdentityTextField(
         },
         isError = isError,
         supportingText = {
-            if (isError) Text("El DNI debe tener al menos 8 números")
+            if (isError) Text("El DNI debe tener 8 números")
         },
         keyboardOptions = keyboardOptions,
         keyboardActions = KeyboardActions(
