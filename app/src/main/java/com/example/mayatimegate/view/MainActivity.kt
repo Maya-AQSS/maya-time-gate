@@ -70,7 +70,6 @@ class MainActivity : ComponentActivity() {
                                 }
 
                             },
-                            navController = navController,
                             viewModel = employeeViewModel // <-- Esta es la conexión clave
                         )
                     }
