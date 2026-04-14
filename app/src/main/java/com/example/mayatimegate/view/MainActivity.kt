@@ -44,8 +44,7 @@ class MainActivity : ComponentActivity() {
 
                     composable("login") {
                         LoginView(
-                            navController,
-                            viewModel  = employeeViewModel // <-- Esta es la conexión clave
+                            navController
                         )
                     }
 
@@ -54,7 +53,6 @@ class MainActivity : ComponentActivity() {
                             onTimeOver = {
                                 navController.popBackStack()
                             },
-
                             navController = navController,
                             viewModel = employeeViewModel
                         )
@@ -70,7 +68,7 @@ class MainActivity : ComponentActivity() {
                                 }
 
                             },
-                            viewModel = employeeViewModel // <-- Esta es la conexión clave
+                            viewModel = employeeViewModel
                         )
                     }
 
