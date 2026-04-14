@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
@@ -68,7 +70,8 @@ class MainActivity : ComponentActivity() {
                                 }
 
                             },
-                            viewModel = employeeViewModel
+                            viewModel = employeeViewModel,
+                            navController = navController
                         )
                     }
 
@@ -120,6 +123,7 @@ class MainActivity : ComponentActivity() {
             // Verificamos que estemos en la pantalla de login
             if (navController.currentDestination?.route == "login") {
                 //navegamos a la pantalla de confirmacion
+
                 navController.navigate("confirmation") {
                     employeeViewModel.searchByRfid(id)
                     launchSingleTop = true
