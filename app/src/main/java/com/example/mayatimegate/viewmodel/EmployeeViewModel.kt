@@ -1,5 +1,6 @@
 package com.example.mayatimegate.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.mayatimegate.data.EmployeeRepository
@@ -49,7 +50,44 @@ class EmployeeViewModel: ViewModel(){
         val dni = stringDni.toIntOrNull()
 
         if (dni != null){
-            val call = repository.searchEmployeeByDni(dni)
+            val call = repository.searchEmployeeByDni(stringDni)
+            call.enqueue(object : Callback<EmployeeResponse>{
+                override fun onResponse(employee: Call<EmployeeResponse>, response: Response<EmployeeResponse>){
+                    //si se encuentra al empleado en odoo se guarda su informaicon en el objeto employeeInfo
+                    if (response.isSuccessful){
+                        val serverResponse = response.body()
+                        //Si va bien se le da valor al empleado
+                        if(serverResponse != null && serverResponse.status == "success"){
+                            employeeInfo.value = serverResponse
+                            errorMessage.value = null
+                        }else{
+                            //si hay algun error se le da valor al error
+                            employeeInfo.value = null
+                            errorMessage.value = serverResponse?.message ?: "Empleado no encontrado"
+
+                        }
+
+                    }else{
+                        errorMessage.value = "Error en el servidor: ${response.code()}"
+                    }
+//                    if (response.isSuccessful) {
+//                        val empleado = response.body()
+//                        if (empleado?.status == "success") {
+//                            // Todo OK
+//                        } else {
+//                            // Aquí verás el mensaje de "No existe empleado..."
+//                            Log.e("API_ERROR", "Mensaje de Odoo: ${empleado?.message}")
+//                        }
+//                    } else {
+//                        // Esto es si el servidor responde 404, 500, etc.
+//                        Log.e("API_ERROR", "Código de error: ${response.code()}")
+//                    }
+                }
+                override fun onFailure(employee: Call<EmployeeResponse>, t: Throwable){
+                    employeeInfo.value = null
+                    errorMessage.value = "Fallo en red: ${t.message}"
+                }
+            })
         }
 
     }

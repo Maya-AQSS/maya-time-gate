@@ -74,4 +74,5 @@ dependencies {
     // Esto es para el viewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
     implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }
