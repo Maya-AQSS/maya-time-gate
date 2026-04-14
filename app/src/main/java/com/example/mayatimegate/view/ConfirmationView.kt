@@ -43,7 +43,7 @@ fun ConfirmationView(
     val employee by viewModel.employeeInfo.observeAsState()
 
 
-    // Temporizador de visualización: 1.5 segundos son ideales para un feedback rápido
+    // Temporizador de visualizacion
     LaunchedEffect(Unit) {
        delay(1600)
         viewModel.resetData()

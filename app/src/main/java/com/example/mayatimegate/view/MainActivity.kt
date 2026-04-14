@@ -5,6 +5,7 @@ import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
@@ -21,9 +22,10 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var navController: NavHostController
 
-    private val employeeViewModel: EmployeeViewModel by lazy {
-        ViewModelProvider(this)[EmployeeViewModel::class.java]
-    }
+//    private val employeeViewModel: EmployeeViewModel by lazy {
+//        ViewModelProvider(this)[EmployeeViewModel::class.java]
+//    }
+    private val employeeViewModel: EmployeeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,7 +55,8 @@ class MainActivity : ComponentActivity() {
                                 navController.popBackStack()
                             },
 
-                            navController = navController
+                            navController = navController,
+                            viewModel = employeeViewModel
                         )
                     }
 

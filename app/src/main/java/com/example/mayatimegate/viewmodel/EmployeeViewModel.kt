@@ -15,7 +15,7 @@ class EmployeeViewModel: ViewModel(){
     val errorMessage = MutableLiveData<String?>() //inicializacion por si hay algun error
 
     fun searchByRfid(rfid: String){
-        val call = repository.searchEmployee(rfid)
+        val call = repository.searchEmployeeByRfid(rfid)
 
         call.enqueue(object : Callback<EmployeeResponse>{
             override fun onResponse(employee: Call<EmployeeResponse>, response: Response<EmployeeResponse>){
@@ -44,6 +44,16 @@ class EmployeeViewModel: ViewModel(){
         })
 
     }
+
+    fun searchByDni(stringDni: String){
+        val dni = stringDni.toIntOrNull()
+
+        if (dni != null){
+            val call = repository.searchEmployeeByDni(dni)
+        }
+
+    }
+
     //Borra toda la informacion
     fun resetData(){
         employeeInfo.value= null

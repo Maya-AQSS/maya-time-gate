@@ -27,19 +27,27 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.mayatimegate.R
+import com.example.mayatimegate.viewmodel.EmployeeViewModel
 import kotlinx.coroutines.delay
+
 
 /**
  * Vista de Identificación Manual.
  * Permite al usuario fichar introduciendo DNI y contraseña si no dispone de tarjeta.
  */
+
 @Composable
-fun ManualIdentificationView(navController: NavHostController, onTimeOver: () -> Unit) {
+fun ManualIdentificationView(
+    navController: NavHostController,
+    onTimeOver: () -> Unit,
+    viewModel: EmployeeViewModel
+) {
+
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
         InactivityTimer(
-            8000L,
+            8000,
             onTimeout = onTimeOver,
             modifier = Modifier.padding(innerPadding),
             onBackClick = {
@@ -48,7 +56,8 @@ fun ManualIdentificationView(navController: NavHostController, onTimeOver: () ->
                     navController.popBackStack()
                 }
             },
-            onManualClick = {
+            onManualClick = { stringDni->
+                viewModel.searchByDni(stringDni)
                 navController.navigate("confirmation") {
                     launchSingleTop = true
                     restoreState = true
@@ -64,7 +73,7 @@ fun InactivityTimer(
     onTimeout: () -> Unit,
     modifier: Modifier,
     onBackClick: () -> Unit,
-    onManualClick: () -> Unit
+    onManualClick: (String) -> Unit
 
 ) {
     // Usamos un State simple para el reinicio
@@ -101,11 +110,11 @@ fun InactivityTimer(
 fun ManualIdentificationCompose(
     modifier: Modifier,
     onBackClick: () -> Unit,
-    onManualClick: () -> Unit,
+    onManualClick: (String) -> Unit,
     onActivity: () -> Unit
 ) {
     // Estados para almacenar los valores de entrada
-    var dni by remember { mutableStateOf("") }
+    var stringDni by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
 
     // Estados para controlar la visualización de errores
@@ -131,7 +140,7 @@ fun ManualIdentificationCompose(
                 isError = dniIsError,
                 onValueReady = { value ->
                     onActivity()
-                    dni = value
+                    stringDni = value
                     // Limpieza dinámica del error si el usuario corrige el dato
                     if (dniIsError && value.length >= 8) dniIsError = false
 
@@ -159,11 +168,11 @@ fun ManualIdentificationCompose(
             RegisterButton(
                 onClick = {
                     // Lógica de validación antes de proceder al registro
-                    if (dni.length >= 8 && pass.isNotEmpty()) {
-                        onManualClick()
+                    if (stringDni.length >= 8 && pass.isNotEmpty()) {
+                        onManualClick(stringDni)
                     } else {
                         // Activación de estados de error para feedback visual
-                        dniIsError = dni.length < 8
+                        dniIsError = stringDni.length < 8
                         passIsError = pass.isEmpty()
                     }
                 }
@@ -347,7 +356,7 @@ fun PassTextField(isError: Boolean, onValueReady: (String) -> Unit, focusManager
  * Botón de confirmación de registro.
  */
 @Composable
-fun RegisterButton(onClick: () -> Unit) {
+fun RegisterButton(onClick:() -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(8.dp),
