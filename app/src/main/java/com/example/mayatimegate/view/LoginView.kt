@@ -3,18 +3,11 @@ package com.example.mayatimegate.view
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,46 +18,60 @@ import java.util.Locale
 import androidx.compose.ui.res.painterResource
 import com.example.mayatimegate.R
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.navigation.NavHostController
 import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import com.example.mayatimegate.viewmodel.SettingsViewModel
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.example.mayatimegate.viewmodel.EmployeeViewModel
 
 /**
  * Punto de entrada principal de la aplicación (Pantalla de Fichaje).
  */
 @Composable
-fun LoginView(
-    onManualClick: () -> Unit,
-    onConfigClick: () -> Unit,
-    viewModel: SettingsViewModel
-) {
+fun LoginView(navController: NavHostController, viewModel: EmployeeViewModel) {
+    val empleado by viewModel.employeeInfo.observeAsState()
+    val error by viewModel.errorMessage.observeAsState()
+
+    // Este bloque se ejecuta cada vez que 'empleado' o 'error' cambian
+    LaunchedEffect(empleado, error) {
+        // Solo disparamos la navegación si esta pantalla es la que está "arriba"
+        val isAtLogin = navController.currentDestination?.route == "login"
+
+        if (isAtLogin) {
+            if (empleado != null) {
+                navController.navigate("confirmation")
+            } else if (error != null) {
+                navController.navigate("error")
+            }
+        }
+    }
 
     Scaffold(
         containerColor = Color(0xFFEEECEB) // Fondo neutro para resaltar la tarjeta central
     ) { innerPadding ->
         LoginCompose(
             modifier = Modifier.padding(innerPadding),
-            onManualClick,
-            onConfigClick,
-            viewModel
+            onManualClick = {
+                // Navegación hacia el formulario manual manteniendo el estado de la pila
+                navController.navigate("manual_id") {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            // Navegacion hacia la ventana de confirmacion
+            {
+                navController.navigate("confirmation") {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
         )
     }
 }
-        
+
 /**
  * Contenedor principal que organiza los elementos visuales de la pantalla de inicio.
  */
 @Composable
-fun LoginCompose(
-    modifier: Modifier,
-    onManualClick: () -> Unit,
-    onConfigClick: () -> Unit,
-    viewModel: SettingsViewModel
-) {
-
+fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit, navigate: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -72,13 +79,10 @@ fun LoginCompose(
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-
-        SettingsButton(onConfigClick, viewModel)
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 40.dp, vertical = 15.dp),
+                .padding(40.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -90,15 +94,15 @@ fun LoginCompose(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            CurrentTime()
+            CurrentTime() // Visualización de hora en tiempo real
 
             Spacer(modifier = Modifier.height(15.dp))
 
-            CurrentDate()
+            CurrentDate() // Fecha actual formateada
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            CardOption()
+            CardOption() // Instrucción visual para el uso de tarjeta NFC/RFID
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 16.dp, horizontal = 25.dp),
@@ -106,117 +110,13 @@ fun LoginCompose(
                 color = Color.Gray.copy(alpha = 0.3f)
             )
 
-            ManualOption(onClick = onManualClick)
+            ManualOption(onClick = onManualClick) // Acceso alternativo por teclado
+            //RfidScanner(onClick = navigate) // Para capturar el codigo del sensor y realizar fichaje
         }
-    }
-
-}
-
-@Composable
-fun SettingsButton(onConfigClick: () -> Unit, viewModel: SettingsViewModel) {
-    var showDialog by remember { mutableStateOf(false) }
-    var textState by remember { mutableStateOf("") }
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically
-    ){
-
-        IconButton(
-            //onClick = onConfigClick,
-            onClick = { showDialog = true},
-            modifier = Modifier.focusProperties { canFocus = false },
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_rounded_settings),
-                contentDescription = "Abrir configuracion",
-                Modifier.size(35.dp),
-                tint = Color(0xFF313131),
-            )
-        }
-    }
-    if (showDialog) {
-        AlertView(
-            textState = textState,
-            onTextChange = { textState = it },
-            onDismiss = { showDialog = false },
-            onSuccess = {
-                showDialog = false
-                onConfigClick()
-            },
-            viewModel = viewModel
-        )
     }
 }
 
-@Composable
-fun AlertView(
-    textState: String,
-    onTextChange: (String) -> Unit,
-    onDismiss: () -> Unit,
-    onSuccess: () -> Unit,
-    viewModel: SettingsViewModel
-) {
-    var isError by remember { mutableStateOf(false) }
-    val pass = viewModel.adminPass.collectAsState().value
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text("Introduce contraseña de Administrador")
-        },
 
-        text = {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ){
-                OutlinedTextField(
-                    value = textState,
-                    onValueChange = {
-                        onTextChange(it)
-                        isError = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Contraseña") },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = { /* opcional */ }
-                    )
-                )
-                if (isError) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Contraseña incorrecta",
-                        color = Color.Red
-                    )
-                }
-            }
-        },
-        confirmButton = {
-
-            Button(onClick = {
-                if (textState == pass) {
-                    onSuccess()
-                }else{
-                 isError = true
-                }
-            }) {
-                Text("Acceder")
-            }
-        },
-
-        dismissButton = {
-            Button(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
 /**
  * Integra un TextClock nativo de Android para asegurar precisión y bajo consumo de recursos.
  */

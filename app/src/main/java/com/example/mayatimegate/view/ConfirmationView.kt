@@ -47,7 +47,6 @@ fun ConfirmationView(
     LaunchedEffect(Unit) {
        delay(30000)
         viewModel.resetData()
-        delay(100)
         onTimeOver()
     }
 
@@ -61,7 +60,7 @@ fun ConfirmationView(
             )
         } else {
            //Mientras cargan los datos o no los encuentra
-                LoadingCompose()
+                LoadingCompose(employee)
         }
     }
 }
@@ -203,7 +202,7 @@ fun InformationalText(user:String) {
 }
 
 @Composable
-fun LoadingCompose(){ //Vista mientras se cargan los datos
+fun LoadingCompose(employee: EmployeeResponse?){ //Vista mientras se cargan los datos
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -216,6 +215,10 @@ fun LoadingCompose(){ //Vista mientras se cargan los datos
         Spacer(modifier = Modifier.height(50.dp))
         CircularProgressIndicator( //Circulo de progreso
 
+        )
+        Text(
+            "$employee",
+            style = MaterialTheme.typography.displayLarge
         )
     }
 }

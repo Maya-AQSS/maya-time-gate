@@ -56,8 +56,6 @@ dependencies {
     implementation(libs.androidx.foundation.layout)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.compose.ui.text)
-    implementation(libs.foundation)
-    implementation(libs.androidx.camera.camera2.pipe)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -76,7 +74,4 @@ dependencies {
     // Esto es para el viewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
     implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
