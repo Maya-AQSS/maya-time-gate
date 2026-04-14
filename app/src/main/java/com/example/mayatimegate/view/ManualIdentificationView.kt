@@ -8,7 +8,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -19,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -44,13 +42,12 @@ fun ManualIdentificationView(
     onTimeOver: () -> Unit,
     viewModel: EmployeeViewModel
 ) {
-    val timeout = 8000L
 
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
         InactivityTimer(
-            timeout,
+            8000,
             onTimeout = onTimeOver,
             modifier = Modifier.padding(innerPadding),
             onBackClick = {
@@ -91,12 +88,9 @@ fun InactivityTimer(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        // PointerEventPass.Initial permite ver el evento ANTES que los hijos
-                        awaitPointerEvent(PointerEventPass.Initial)
-                        interactionCount++
-                    }
+                awaitEachGesture {
+                    awaitFirstDown() // Detecta el primer contacto
+                    interactionCount++ // Reinicia el timer
                 }
             }
     ) {
@@ -129,16 +123,8 @@ fun ManualIdentificationCompose(
 
     val focusManager = LocalFocusManager.current
     Card(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = {
-                    focusManager.clearFocus() // Esto quita el cursor y cierra el teclado
-                })
-            },
+        modifier = modifier.fillMaxSize().padding(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         BackRow(onBackClick = onBackClick)
 
@@ -186,7 +172,7 @@ fun ManualIdentificationCompose(
                         onManualClick(stringDni)
                     } else {
                         // Activación de estados de error para feedback visual
-                        dniIsError = stringDni.length != 8
+                        dniIsError = stringDni.length < 8
                         passIsError = pass.isEmpty()
                     }
                 }
@@ -276,7 +262,7 @@ fun IdentityTextField(
         },
         isError = isError,
         supportingText = {
-            if (isError) Text("El DNI debe tener 8 números")
+            if (isError) Text("El DNI debe tener al menos 8 números")
         },
         keyboardOptions = keyboardOptions,
         keyboardActions = KeyboardActions(
@@ -329,6 +315,7 @@ fun PassTextField(isError: Boolean, onValueReady: (String) -> Unit, focusManager
         keyboardActions = KeyboardActions(
             onDone = {
                 focusManager.clearFocus() // Esconde el teclado
+                // Opcional: podrías llamar aquí a la lógica de validación
             }
         ),
         trailingIcon = {
