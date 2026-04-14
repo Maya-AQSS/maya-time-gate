@@ -60,7 +60,7 @@ fun ConfirmationView(
             )
         } else {
            //Mientras cargan los datos o no los encuentra
-                LoadingCompose(employee)
+                LoadingCompose()
         }
     }
 }
@@ -215,10 +215,6 @@ fun LoadingCompose(employee: EmployeeResponse?){ //Vista mientras se cargan los 
         Spacer(modifier = Modifier.height(50.dp))
         CircularProgressIndicator( //Circulo de progreso
 
-        )
-        Text(
-            "$employee",
-            style = MaterialTheme.typography.displayLarge
         )
     }
 }
