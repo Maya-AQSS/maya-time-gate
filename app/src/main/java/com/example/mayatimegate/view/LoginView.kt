@@ -34,14 +34,18 @@ fun LoginView(navController: NavHostController, viewModel: EmployeeViewModel) {
     LaunchedEffect(empleado, error) {
         // Solo disparamos la navegación si esta pantalla es la que está "arriba"
         val isAtLogin = navController.currentDestination?.route == "login"
-
         if (isAtLogin) {
             if (empleado != null) {
                 navController.navigate("confirmation")
-            } else if (error != null) {
-                navController.navigate("error")
             }
         }
+//        if (isAtLogin) {
+//            if (empleado != null) {
+//                navController.navigate("confirmation")
+//            } else if (error != null) {
+//                navController.navigate("error")
+//            }
+//        }
     }
 
     Scaffold(

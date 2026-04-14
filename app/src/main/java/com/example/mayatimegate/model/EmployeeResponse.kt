@@ -7,9 +7,9 @@ data class EmployeeResponse(
     @SerializedName("id_odoo")
     val odooId: Int?,
     @SerializedName("nombre")
-    val name: String,
+    val name: String?,
     @SerializedName("apellidos")
-    val surname: String,
+    val surname: String?,
     val dni: String?,
     val imageUrl:String?,
     val message:String?
