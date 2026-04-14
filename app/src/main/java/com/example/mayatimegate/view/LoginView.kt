@@ -26,27 +26,7 @@ import com.example.mayatimegate.viewmodel.EmployeeViewModel
  * Punto de entrada principal de la aplicación (Pantalla de Fichaje).
  */
 @Composable
-fun LoginView(navController: NavHostController, viewModel: EmployeeViewModel) {
-    val empleado by viewModel.employeeInfo.observeAsState()
-    val error by viewModel.errorMessage.observeAsState()
-
-    // Este bloque se ejecuta cada vez que 'empleado' o 'error' cambian
-    LaunchedEffect(empleado, error) {
-        // Solo disparamos la navegación si esta pantalla es la que está "arriba"
-        val isAtLogin = navController.currentDestination?.route == "login"
-        if (isAtLogin) {
-            if (empleado != null) {
-                navController.navigate("confirmation")
-            }
-        }
-//        if (isAtLogin) {
-//            if (empleado != null) {
-//                navController.navigate("confirmation")
-//            } else if (error != null) {
-//                navController.navigate("error")
-//            }
-//        }
-    }
+fun LoginView(navController: NavHostController) {
 
     Scaffold(
         containerColor = Color(0xFFEEECEB) // Fondo neutro para resaltar la tarjeta central
@@ -60,13 +40,6 @@ fun LoginView(navController: NavHostController, viewModel: EmployeeViewModel) {
                     restoreState = true
                 }
             },
-            // Navegacion hacia la ventana de confirmacion
-            {
-                navController.navigate("confirmation") {
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            }
         )
     }
 }
@@ -75,7 +48,7 @@ fun LoginView(navController: NavHostController, viewModel: EmployeeViewModel) {
  * Contenedor principal que organiza los elementos visuales de la pantalla de inicio.
  */
 @Composable
-fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit, navigate: () -> Unit) {
+fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -115,11 +88,9 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit, navigate: () -> 
             )
 
             ManualOption(onClick = onManualClick) // Acceso alternativo por teclado
-            //RfidScanner(onClick = navigate) // Para capturar el codigo del sensor y realizar fichaje
         }
     }
 }
-
 
 /**
  * Integra un TextClock nativo de Android para asegurar precisión y bajo consumo de recursos.
