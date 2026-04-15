@@ -123,8 +123,11 @@ fun ManualIdentificationCompose(
 
     val focusManager = LocalFocusManager.current
     Card(
-        modifier = modifier.fillMaxSize().padding(32.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         BackRow(onBackClick = onBackClick)
 
