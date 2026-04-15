@@ -47,10 +47,9 @@ fun ConfirmationView(
 
     // Temporizador de visualizacion
     LaunchedEffect(employee) {
-       println("DEBUG: El estado del empleado es: ${employee?.status}")
        if(employee != null){
            if(employee?.status == "success"){
-               delay(3000)
+               delay(2000)
                viewModel.resetData()
                onTimeOver()
            }else if(employee?.status == "error"){
@@ -145,8 +144,6 @@ fun CircleImage(userName: String, url: String?) {
                 contentDescription = "Foto de perfil",
                 placeholder = painterResource(R.drawable.logo_ceedcv), // Una imagen gris o logo
                 error = painterResource(R.drawable.ic_error), // Una imagen de aviso
-                onLoading = { println("Coil: Cargando...") },
-                onError = { error -> println("Coil error: ${error.result.throwable}") },
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )

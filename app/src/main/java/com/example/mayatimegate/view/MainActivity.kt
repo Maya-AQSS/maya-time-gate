@@ -120,14 +120,17 @@ class MainActivity : ComponentActivity() {
 
     private fun signingProcess(id: String) { //Funcion que procesa el codigo
         runOnUiThread {
+
             // Verificamos que estemos en la pantalla de login
             if (navController.currentDestination?.route == "login") {
                 //navegamos a la pantalla de confirmacion
+                employeeViewModel.searchByRfid(id)
 
-                navController.navigate("confirmation") {
-                    employeeViewModel.searchByRfid(id)
-                    launchSingleTop = true
-                }
+                    navController.navigate("confirmation") {
+                        launchSingleTop = true
+                    }
+                
+
             }
         }
     }
