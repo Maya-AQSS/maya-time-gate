@@ -24,9 +24,6 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var navController: NavHostController
 
-//    private val employeeViewModel: EmployeeViewModel by lazy {
-//        ViewModelProvider(this)[EmployeeViewModel::class.java]
-//    }
     private val employeeViewModel: EmployeeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,6 +82,18 @@ class MainActivity : ComponentActivity() {
                             },
                             navController = navController,
                             viewModel = employeeViewModel
+                        )
+                    }
+
+                    composable("connection_error"){
+                        ConnectionErrorView(
+                            onTimeOver = {
+                                navController.navigate("login") {
+                                    popUpTo("login") { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            },
+                            navController = navController
                         )
                     }
                 }
