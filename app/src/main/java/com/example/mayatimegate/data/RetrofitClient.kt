@@ -9,7 +9,7 @@ object RetrofitClient { // Parte que se conecta a la api
 
     //10.42.0.1 URL por si usas wifi
     //10.0.2.2 URL si usas cable usb
-    private const val URL = "http://10.0.2.2:8069/" //url de la api
+    private const val URL = "http://10.42.0.1:8069/" //url de la api
 
 
     val odooApi: OdooApi by lazy {
