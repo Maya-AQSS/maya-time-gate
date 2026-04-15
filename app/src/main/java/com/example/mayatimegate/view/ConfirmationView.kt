@@ -20,7 +20,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.mayatimegate.R
 import kotlinx.coroutines.delay
@@ -39,26 +38,16 @@ import com.example.mayatimegate.viewmodel.EmployeeViewModel
 fun ConfirmationView(
     onTimeOver: () -> Unit,
     viewModel: EmployeeViewModel,
-    navController: NavController
 ) {
 
     val employee by viewModel.employeeInfo.observeAsState()
 
 
     // Temporizador de visualizacion
-    LaunchedEffect(employee) {
-       if(employee != null){
-           if(employee?.status == "success"){
-               delay(2000)
-               viewModel.resetData()
-               onTimeOver()
-           }else if(employee?.status == "error"){
-               navController.navigate("error")
-               viewModel.resetData()
-
-           }
-       }
-
+    LaunchedEffect(Unit) {
+       delay(1600)
+        viewModel.resetData()
+        onTimeOver()
     }
 
     Scaffold(
@@ -71,7 +60,7 @@ fun ConfirmationView(
             )
         } else {
            //Mientras cargan los datos o no los encuentra
-                LoadingCompose()
+                LoadingCompose(employee)
         }
     }
 }
@@ -141,6 +130,8 @@ fun CircleImage(userName: String, url: String?) {
                 contentDescription = "Foto de perfil",
                 placeholder = painterResource(R.drawable.logo_ceedcv), // Una imagen gris o logo
                 error = painterResource(R.drawable.ic_error), // Una imagen de aviso
+                onLoading = { println("Coil: Cargando...") },
+                onError = { error -> println("Coil error: ${error.result.throwable}") },
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
@@ -211,7 +202,7 @@ fun InformationalText(user:String) {
 }
 
 @Composable
-fun LoadingCompose(){ //Vista mientras se cargan los datos
+fun LoadingCompose(employee: EmployeeResponse?){ //Vista mientras se cargan los datos
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -224,6 +215,10 @@ fun LoadingCompose(){ //Vista mientras se cargan los datos
         Spacer(modifier = Modifier.height(50.dp))
         CircularProgressIndicator( //Circulo de progreso
 
+        )
+        Text(
+            "$employee",
+            style = MaterialTheme.typography.displayLarge
         )
     }
 }
