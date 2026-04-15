@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                 // Definición del grafo de navegación de la aplicación
                 NavHost(
                     navController = navController,
-                    startDestination = "login"
+                    startDestination = "connection_error"
                 ) {
 
                     composable("login") {
@@ -125,11 +125,9 @@ class MainActivity : ComponentActivity() {
             if (navController.currentDestination?.route == "login") {
                 //navegamos a la pantalla de confirmacion
                 employeeViewModel.searchByRfid(id)
-
                     navController.navigate("confirmation") {
                         launchSingleTop = true
                     }
-                
 
             }
         }
