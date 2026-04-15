@@ -1,7 +1,9 @@
 package com.example.mayatimegate.view
 
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -26,10 +29,13 @@ import androidx.navigation.NavHostController
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
+import com.example.mayatimegate.R
 import com.example.mayatimegate.viewmodel.SettingsViewModel
 
 /**
@@ -75,16 +81,33 @@ fun ConfigurationCompose(modifier: Modifier, onBackClick: () -> Unit, viewModel:
                 .fillMaxSize()
                 .padding(32.dp)
         ){
-            Text(
-                text = "Configuración",
-                style = MaterialTheme.typography.displaySmall
-            )
+            ConfigurationTitle()
             Spacer(Modifier.size(40.dp))
             DeviceName(viewModel, focusManager)
             Spacer(Modifier.size(20.dp))
             OdooURL(viewModel, focusManager)
         }
 
+    }
+}
+
+@Composable
+fun ConfigurationTitle(){
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Text(
+            text = "Configuración",
+            style = MaterialTheme.typography.displaySmall
+        )
+        Spacer(Modifier.size(12.dp))
+        Icon(
+            painter = painterResource(id = R.drawable.ic_settings),
+            contentDescription = "Abrir configuracion",
+            Modifier.size(35.dp)
+        )
     }
 }
 
