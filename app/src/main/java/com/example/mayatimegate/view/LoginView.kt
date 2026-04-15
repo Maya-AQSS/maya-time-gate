@@ -3,11 +3,9 @@ package com.example.mayatimegate.view
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,28 +16,24 @@ import java.util.Locale
 import androidx.compose.ui.res.painterResource
 import com.example.mayatimegate.R
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.navigation.NavHostController
 import androidx.compose.ui.focus.focusProperties
-import com.example.mayatimegate.viewmodel.EmployeeViewModel
 
 /**
  * Punto de entrada principal de la aplicación (Pantalla de Fichaje).
  */
 @Composable
-fun LoginView(navController: NavHostController) {
+fun LoginView(
+    onManualClick: () -> Unit,
+    onConfigClick: () -> Unit
+    ) {
 
     Scaffold(
         containerColor = Color(0xFFEEECEB) // Fondo neutro para resaltar la tarjeta central
     ) { innerPadding ->
         LoginCompose(
             modifier = Modifier.padding(innerPadding),
-            onManualClick = {
-                // Navegación hacia el formulario manual manteniendo el estado de la pila
-                navController.navigate("manual_id") {
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
+            onManualClick,
+            onConfigClick
         )
     }
 }
@@ -48,7 +42,7 @@ fun LoginView(navController: NavHostController) {
  * Contenedor principal que organiza los elementos visuales de la pantalla de inicio.
  */
 @Composable
-fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
+fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit, onConfigClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -56,10 +50,13 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
+
+        SettingsButton(onConfigClick)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(40.dp),
+                .padding(horizontal = 40.dp, vertical = 15.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -88,6 +85,24 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
             )
 
             ManualOption(onClick = onManualClick) // Acceso alternativo por teclado
+        }
+    }
+}
+
+@Composable
+fun SettingsButton(onConfigClick: () -> Unit) {
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        IconButton(onClick = onConfigClick) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_settings),
+                contentDescription = "Abrir configuracion",
+                Modifier.size(35.dp)
+            )
         }
     }
 }
