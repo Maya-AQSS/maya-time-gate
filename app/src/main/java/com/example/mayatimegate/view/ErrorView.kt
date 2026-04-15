@@ -57,6 +57,7 @@ fun ErrorCompose(modifier: Modifier, onClick: () -> Unit) {
             .fillMaxSize()
             .padding(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
