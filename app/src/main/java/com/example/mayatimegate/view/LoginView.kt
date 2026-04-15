@@ -99,7 +99,7 @@ fun SettingsButton(onConfigClick: () -> Unit) {
     ){
         IconButton(onClick = onConfigClick) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_settings),
+                painter = painterResource(id = R.drawable.ic_more_vert),
                 contentDescription = "Abrir configuracion",
                 Modifier.size(35.dp)
             )
