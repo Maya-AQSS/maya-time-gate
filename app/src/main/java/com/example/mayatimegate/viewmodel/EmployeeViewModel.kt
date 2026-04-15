@@ -24,12 +24,12 @@ class EmployeeViewModel: ViewModel(){
                 if (response.isSuccessful){
                     val serverResponse = response.body()
                     //Si va bien se le da valor al empleado
+                    employeeInfo.value = serverResponse
+
                     if(serverResponse != null && serverResponse.status == "success"){
-                        employeeInfo.value = serverResponse
                         errorMessage.value = null
                     }else{
                         //si hay algun error se le da valor al error
-                        employeeInfo.value = null
                         errorMessage.value = serverResponse?.message ?: "Empleado no encontrado"
 
                     }
@@ -53,7 +53,6 @@ class EmployeeViewModel: ViewModel(){
             val call = repository.searchEmployeeByDni(stringDni)
             call.enqueue(object : Callback<EmployeeResponse>{
                 override fun onResponse(employee: Call<EmployeeResponse>, response: Response<EmployeeResponse>){
-                    println("ViewModel: He recibido datos -> ${response.body()}")
                     //si se encuentra al empleado en odoo se guarda su informaicon en el objeto employeeInfo
                     if (response.isSuccessful){
                         val serverResponse = response.body()
