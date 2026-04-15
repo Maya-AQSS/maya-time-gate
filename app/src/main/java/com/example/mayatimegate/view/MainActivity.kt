@@ -13,6 +13,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mayatimegate.ui.theme.MayaTimeGateTheme
 import com.example.mayatimegate.viewmodel.EmployeeViewModel
+import com.example.mayatimegate.data.SettingsManager
+import com.example.mayatimegate.viewmodel.SettingsViewModel
+
+
 
 class MainActivity : ComponentActivity() {
     private val rfidBuffer = StringBuilder()
@@ -23,9 +27,14 @@ class MainActivity : ComponentActivity() {
 
     private val employeeViewModel: EmployeeViewModel by viewModels()
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge() // Habilita el diseño de borde a borde (detrás de las barras de sistema)
+
+        val settingsManager = SettingsManager(this)
+        val settingsViewModel = SettingsViewModel(settingsManager)
 
         setContent {
             MayaTimeGateTheme {
@@ -109,6 +118,7 @@ class MainActivity : ComponentActivity() {
                     composable("configuration") {
                         ConfigurationView(
                             navController = navController,
+                            viewModel = settingsViewModel
                         )
                     }
                 }
