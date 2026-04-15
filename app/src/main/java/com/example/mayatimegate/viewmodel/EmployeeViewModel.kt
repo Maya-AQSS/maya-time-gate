@@ -55,9 +55,10 @@ class EmployeeViewModel: ViewModel(){
 
     fun searchByDni(stringDni: String){
         val dni = stringDni.toIntOrNull()
-
         if (dni != null){
-            val call = repository.searchEmployeeByDni(stringDni)
+            val letter = calculateLetterOfDni(dni)
+            val officialDni = stringDni + letter
+            val call = repository.searchEmployeeByDni(officialDni)
             call.enqueue(object : Callback<EmployeeResponse>{
                 override fun onResponse(employee: Call<EmployeeResponse>, response: Response<EmployeeResponse>){
                     //si se encuentra al empleado en odoo se guarda su informaicon en el objeto employeeInfo
@@ -75,18 +76,6 @@ class EmployeeViewModel: ViewModel(){
                     }else{
                         errorMessage.value = "Error en el servidor: ${response.code()}"
                     }
-//                    if (response.isSuccessful) {
-//                        val empleado = response.body()
-//                        if (empleado?.status == "success") {
-//                            // Todo OK
-//                        } else {
-//                            // Aquí verás el mensaje de "No existe empleado..."
-//                            Log.e("API_ERROR", "Mensaje de Odoo: ${empleado?.message}")
-//                        }
-//                    } else {
-//                        // Esto es si el servidor responde 404, 500, etc.
-//                        Log.e("API_ERROR", "Código de error: ${response.code()}")
-//                    }
                 }
                 override fun onFailure(employee: Call<EmployeeResponse>, t: Throwable){
                     employeeInfo.value = EmployeeResponse(
@@ -117,5 +106,28 @@ class EmployeeViewModel: ViewModel(){
     fun resetData(){
         employeeInfo.value= null
         errorMessage.value= null
+    }
+
+
+    //Funcion para calcular la letra del dni en funcion de los numeros introducidos
+    fun calculateLetterOfDni(dni:Int): String{
+        return when (dni % 23){
+            0 -> "T"
+            1 -> "R"
+            2 -> "W"
+            3 -> "A"
+            4 -> "G"
+            5 -> "M"
+            6 -> "Y"
+            7 -> "F"
+            8 -> "P"
+            9 -> "D"
+            10 -> "X"
+            11 -> "B"
+            12 -> "N"
+            13 -> "J"
+            14 -> "Z"
+            else -> "S"
+        }
     }
 }

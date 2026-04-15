@@ -38,29 +38,40 @@ import com.example.mayatimegate.viewmodel.EmployeeViewModel
 fun ConfirmationView(
     onTimeOver: () -> Unit,
     viewModel: EmployeeViewModel,
+    navController: NavHostController
 ) {
 
     val employee by viewModel.employeeInfo.observeAsState()
 
 
     // Temporizador de visualizacion
-    LaunchedEffect(Unit) {
-       delay(1600)
-        viewModel.resetData()
-        onTimeOver()
+    LaunchedEffect(employee) {
+        println("DEBUG: El estado del empleado es: ${employee?.status}")
+        if(employee != null){
+            if(employee?.status == "success"){ //si el empleado existe se muesta
+                delay(2000)
+                viewModel.resetData()
+                onTimeOver()
+            }else if(employee?.status == "error"){ //si no se muestra error
+                navController.navigate("error")
+                viewModel.resetData()
+
+            }
+        }
+
     }
 
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
-        if (employee != null) {
+        if (employee?.name != null) { //solo se muestra si el empleado tiene nombre
             ConfirmationCompose(
                 employee = employee!!,
                 modifier = Modifier.padding(innerPadding)
             )
         } else {
            //Mientras cargan los datos o no los encuentra
-                LoadingCompose(employee)
+                LoadingCompose()
         }
     }
 }
@@ -202,7 +213,7 @@ fun InformationalText(user:String) {
 }
 
 @Composable
-fun LoadingCompose(employee: EmployeeResponse?){ //Vista mientras se cargan los datos
+fun LoadingCompose(){ //Vista mientras se cargan los datos
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -213,13 +224,7 @@ fun LoadingCompose(employee: EmployeeResponse?){ //Vista mientras se cargan los 
             style = MaterialTheme.typography.displayLarge
         )
         Spacer(modifier = Modifier.height(50.dp))
-        CircularProgressIndicator( //Circulo de progreso
-
-        )
-        Text(
-            "$employee",
-            style = MaterialTheme.typography.displayLarge
-        )
+        CircularProgressIndicator()//Circulo de progreso
     }
 }
 
