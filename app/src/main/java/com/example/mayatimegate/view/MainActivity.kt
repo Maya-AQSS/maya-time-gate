@@ -6,10 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -43,7 +40,19 @@ class MainActivity : ComponentActivity() {
 
                     composable("login") {
                         LoginView(
-                            navController
+                            onManualClick = {
+                                navController.navigate("manual_id") {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            onConfigClick = {
+                                navController.navigate("configuration") {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+
                         )
                     }
 
@@ -94,6 +103,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             navController = navController
+                        )
+                    }
+
+                    composable("configuration") {
+                        ConfigurationView(
+                            navController = navController,
                         )
                     }
                 }
