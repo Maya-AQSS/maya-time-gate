@@ -20,7 +20,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.mayatimegate.R
 import kotlinx.coroutines.delay
@@ -39,43 +38,29 @@ import com.example.mayatimegate.viewmodel.EmployeeViewModel
 fun ConfirmationView(
     onTimeOver: () -> Unit,
     viewModel: EmployeeViewModel,
-    navController: NavController
 ) {
 
     val employee by viewModel.employeeInfo.observeAsState()
 
 
     // Temporizador de visualizacion
-    LaunchedEffect(employee) {
-       println("DEBUG: El estado del empleado es: ${employee?.status}")
-       if(employee != null){
-           if(employee?.status == "success"){
-               delay(3000)
-               viewModel.resetData()
-               onTimeOver()
-           }else if(employee?.status == "error"){
-               navController.navigate("error")
-               viewModel.resetData()
-
-           }
-       }
-
+    LaunchedEffect(Unit) {
+       delay(1600)
+        viewModel.resetData()
+        onTimeOver()
     }
 
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
-        when {
-            employee?.status == "success" -> {
-                ConfirmationCompose(
-                    employee = employee!!,
-                    modifier = Modifier.padding(innerPadding)
-                )
-            }
-            else -> {
-                // Mientras el status sea null (cargando) o sea "error" (esperando navegación)
-                LoadingCompose()
-            }
+        if (employee != null) {
+            ConfirmationCompose(
+                employee = employee!!,
+                modifier = Modifier.padding(innerPadding)
+            )
+        } else {
+           //Mientras cargan los datos o no los encuentra
+                LoadingCompose(employee)
         }
     }
 }
@@ -217,7 +202,7 @@ fun InformationalText(user:String) {
 }
 
 @Composable
-fun LoadingCompose(){ //Vista mientras se cargan los datos
+fun LoadingCompose(employee: EmployeeResponse?){ //Vista mientras se cargan los datos
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -230,6 +215,10 @@ fun LoadingCompose(){ //Vista mientras se cargan los datos
         Spacer(modifier = Modifier.height(50.dp))
         CircularProgressIndicator( //Circulo de progreso
 
+        )
+        Text(
+            "$employee",
+            style = MaterialTheme.typography.displayLarge
         )
     }
 }

@@ -39,7 +39,14 @@ class EmployeeViewModel: ViewModel(){
                 }
             }
             override fun onFailure(employee: Call<EmployeeResponse>, t: Throwable){
-                employeeInfo.value = null
+                employeeInfo.value = EmployeeResponse(
+                    status = "error",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    message = "Error de conexion")
                 errorMessage.value = "Fallo en red: ${t.message}"
             }
         })
@@ -63,7 +70,6 @@ class EmployeeViewModel: ViewModel(){
                         }else{
                             //si hay algun error se le da valor al error
                             errorMessage.value = serverResponse?.message ?: "Empleado no encontrado"
-
                         }
 
                     }else{
@@ -83,7 +89,14 @@ class EmployeeViewModel: ViewModel(){
 //                    }
                 }
                 override fun onFailure(employee: Call<EmployeeResponse>, t: Throwable){
-                    employeeInfo.value = null
+                    employeeInfo.value = EmployeeResponse(
+                        status = "error",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        message = "Error de conexion")
                     errorMessage.value = "Fallo en red: ${t.message}"
                 }
             })
