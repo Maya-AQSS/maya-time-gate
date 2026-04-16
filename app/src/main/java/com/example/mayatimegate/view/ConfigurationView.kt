@@ -1,7 +1,11 @@
 package com.example.mayatimegate.view
 
+import android.annotation.SuppressLint
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +22,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -31,23 +34,33 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.mayatimegate.R
 import com.example.mayatimegate.viewmodel.SettingsViewModel
+import kotlinx.coroutines.delay
+import android.provider.Settings
+import androidx.compose.ui.platform.LocalContext
 
 /**
  * Vista de configuracion de la aplicacion
  */
 @Composable
-fun ConfigurationView(navController: NavHostController, viewModel: SettingsViewModel) {
+fun ConfigurationView(
+    navController: NavHostController,
+    viewModel: SettingsViewModel,
+    onTimeOver: () -> Unit
+) {
 
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
-        ConfigurationCompose(
+        ConfigurationInactivityTimer(
+            20000,
+            onTimeout = onTimeOver,
             modifier = Modifier.padding(innerPadding),
             onBackClick = {
                 // Navegación segura hacia atrás comprobando la pila
@@ -61,7 +74,50 @@ fun ConfigurationView(navController: NavHostController, viewModel: SettingsViewM
 }
 
 @Composable
-fun ConfigurationCompose(modifier: Modifier, onBackClick: () -> Unit, viewModel: SettingsViewModel){
+fun ConfigurationInactivityTimer(
+    timeoutMillis: Long = 10000L,
+    onTimeout: () -> Unit,
+    modifier: Modifier,
+    onBackClick: () -> Unit,
+    viewModel: SettingsViewModel
+) {
+    var interactionCount by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(interactionCount) {
+        delay(timeoutMillis)
+        onTimeout()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                // Usamos awaitPointerEventScope para interceptar eventos antes que los hijos
+                awaitPointerEventScope {
+                    while (true) {
+                        // PointerEventPass.Initial permite ver el evento ANTES que los hijos
+                        awaitPointerEvent(PointerEventPass.Initial)
+                        interactionCount++
+                    }
+                }
+            }
+    ) {
+        ConfigurationCompose(
+            modifier = modifier,
+            onBackClick = onBackClick,
+            onActivity = { interactionCount++ },
+            viewModel = viewModel
+        )
+    }
+}
+
+@Composable
+fun ConfigurationCompose(
+    modifier: Modifier,
+    onBackClick: () -> Unit,
+    onActivity: () -> Unit,
+    viewModel: SettingsViewModel
+){
     val focusManager = LocalFocusManager.current
     Card(
         modifier = Modifier
@@ -83,9 +139,11 @@ fun ConfigurationCompose(modifier: Modifier, onBackClick: () -> Unit, viewModel:
         ){
             ConfigurationTitle()
             Spacer(Modifier.size(40.dp))
-            DeviceName(viewModel, focusManager)
+            DeviceName(viewModel, focusManager, onActivity)
             Spacer(Modifier.size(20.dp))
-            OdooURL(viewModel, focusManager)
+            OdooURL(viewModel, focusManager, onActivity)
+            Spacer(Modifier.size(20.dp))
+            AndroidId()
         }
 
     }
@@ -112,7 +170,7 @@ fun ConfigurationTitle(){
 }
 
 @Composable
-fun DeviceName(viewModel: SettingsViewModel, focusManager: FocusManager){
+fun DeviceName(viewModel: SettingsViewModel, focusManager: FocusManager, onActivity: () -> Unit){
     // Control de Nombre del Dispositivo
     val deviceNameSaved by viewModel.deviceName.collectAsState()
 
@@ -136,6 +194,7 @@ fun DeviceName(viewModel: SettingsViewModel, focusManager: FocusManager){
         onValueChange = {
             localName = it
             viewModel.updateDeviceName(it)
+            onActivity()
         },
 
         label = { Text("Nombre del dispositivo") },
@@ -152,7 +211,7 @@ fun DeviceName(viewModel: SettingsViewModel, focusManager: FocusManager){
 }
 
 @Composable
-fun OdooURL(viewModel: SettingsViewModel, focusManager: FocusManager){
+fun OdooURL(viewModel: SettingsViewModel, focusManager: FocusManager, onActivity: () -> Unit){
     // Control de Nombre del Dispositivo
     val UrlSaved by viewModel.urlName.collectAsState()
 
@@ -169,6 +228,7 @@ fun OdooURL(viewModel: SettingsViewModel, focusManager: FocusManager){
         onValueChange = {
             localUrl = it
             viewModel.updateUrlName(it)
+            onActivity()
         },
         label = { Text("URL de Odoo") },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -184,3 +244,22 @@ fun OdooURL(viewModel: SettingsViewModel, focusManager: FocusManager){
 
     )
 }
+
+@SuppressLint("HardwareIds")
+@Composable
+fun AndroidId(){
+
+    val context = LocalContext.current
+
+    val androidId = Settings.Secure.getString(
+        context.contentResolver,
+        Settings.Secure.ANDROID_ID
+    )
+
+    Text(
+        "Android ID: $androidId",
+        color = Color.Black
+    )
+
+}
+
