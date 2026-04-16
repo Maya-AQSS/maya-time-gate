@@ -17,6 +17,7 @@ import androidx.compose.ui.res.painterResource
 import com.example.mayatimegate.R
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 
 /**
  * Punto de entrada principal de la aplicación (Pantalla de Fichaje).
@@ -43,6 +44,7 @@ fun LoginView(
  */
 @Composable
 fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit, onConfigClick: () -> Unit) {
+
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -68,15 +70,15 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit, onConfigClick: (
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            CurrentTime() // Visualización de hora en tiempo real
+            CurrentTime()
 
             Spacer(modifier = Modifier.height(15.dp))
 
-            CurrentDate() // Fecha actual formateada
+            CurrentDate()
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            CardOption() // Instrucción visual para el uso de tarjeta NFC/RFID
+            CardOption()
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 16.dp, horizontal = 25.dp),
@@ -84,9 +86,10 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit, onConfigClick: (
                 color = Color.Gray.copy(alpha = 0.3f)
             )
 
-            ManualOption(onClick = onManualClick) // Acceso alternativo por teclado
+            ManualOption(onClick = onManualClick)
         }
     }
+    
 }
 
 @Composable
@@ -97,7 +100,10 @@ fun SettingsButton(onConfigClick: () -> Unit) {
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
     ){
-        IconButton(onClick = onConfigClick) {
+        IconButton(
+            onClick = onConfigClick,
+            modifier = Modifier.focusProperties { canFocus = false },
+        ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_settings),
                 contentDescription = "Abrir configuracion",
