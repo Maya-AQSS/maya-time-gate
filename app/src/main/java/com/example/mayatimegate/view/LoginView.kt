@@ -89,7 +89,7 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit, onConfigClick: (
             ManualOption(onClick = onManualClick)
         }
     }
-    
+
 }
 
 @Composable
