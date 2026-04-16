@@ -34,7 +34,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     null,
                     null,
                     null,
-                    message = "url-error"
+                    message = "connection-error"
                 )
                 errorMessage.value = "URL inválida. Revise la configuración"
                 return@launch
@@ -93,7 +93,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     null,
                     null,
                     null,
-                    message = "url-error"
+                    message = "connection-error"
                 )
                 errorMessage.value = "URL inválida. Revise la configuración"
                 return@launch
