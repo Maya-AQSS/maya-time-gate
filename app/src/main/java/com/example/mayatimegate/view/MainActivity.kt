@@ -117,6 +117,9 @@ class MainActivity : ComponentActivity() {
 
                     composable("configuration") {
                         ConfigurationView(
+                            onTimeOver = {
+                                navController.popBackStack()
+                            },
                             navController = navController,
                             viewModel = settingsViewModel
                         )
