@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -43,6 +44,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import kotlinx.serialization.descriptors.PrimitiveKind
 
 /**
  * Vista de configuracion de la aplicacion
@@ -142,11 +145,13 @@ fun ConfigurationCompose(
             // Demas composes
             ConfigurationTitle()
             Spacer(Modifier.size(40.dp))
+            AndroidId(viewModel)
+            Spacer(Modifier.size(20.dp))
             DeviceName(viewModel, focusManager, onActivity)
             Spacer(Modifier.size(20.dp))
             OdooURL(viewModel, focusManager, onActivity)
             Spacer(Modifier.size(20.dp))
-            AndroidId(viewModel)
+
         }
 
     }
@@ -235,6 +240,10 @@ fun OdooURL(viewModel: SettingsViewModel, focusManager: FocusManager, onActivity
 
     var localUrl by remember { mutableStateOf("") }
 
+    var showMessage by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+
     // Sincronizamos el estado local cuando el guardado cambie
     LaunchedEffect(UrlSaved) {
         localUrl = UrlSaved
@@ -275,6 +284,28 @@ fun OdooURL(viewModel: SettingsViewModel, focusManager: FocusManager, onActivity
         singleLine = true
 
     )
+    IconButton(
+        onClick = {
+            showMessage = true
+            scope.launch {
+                delay(4000)
+                showMessage = false
+            }
+        }
+
+    ){
+        Icon(
+            painter = painterResource(id = R.drawable.ic_help),
+            contentDescription = "Abrir configuracion",
+            tint=Color(0xFF3596D9),
+            modifier = Modifier.size(24.dp)
+        )
+    }
+
+    if (showMessage) {
+        Text("URL wifi: 10.42.0.1")
+        Text("URL cable: 10.0.2.2")
+    }
 }
 /**
  * Texto que muestra el android id
@@ -288,6 +319,5 @@ fun AndroidId(viewModel: SettingsViewModel,){
         "Android ID: $androidId",
         color = Color.Black
     )
-
 }
 
