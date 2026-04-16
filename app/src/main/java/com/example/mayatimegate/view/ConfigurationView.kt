@@ -1,8 +1,6 @@
 package com.example.mayatimegate.view
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,8 +40,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import com.example.mayatimegate.R
 import com.example.mayatimegate.viewmodel.SettingsViewModel
 import kotlinx.coroutines.delay
-import android.provider.Settings
-import androidx.compose.ui.platform.LocalContext
 
 /**
  * Vista de configuracion de la aplicacion
@@ -72,7 +68,9 @@ fun ConfigurationView(
         )
     }
 }
-
+/**
+ * Contenedor que se encarga de gestionar el cierre de la vista por inactividad
+ */
 @Composable
 fun ConfigurationInactivityTimer(
     timeoutMillis: Long = 10000L,
@@ -83,7 +81,7 @@ fun ConfigurationInactivityTimer(
 ) {
     var interactionCount by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(interactionCount) {
+    LaunchedEffect(interactionCount) { //Cuando pasa el tiempo se cierra
         delay(timeoutMillis)
         onTimeout()
     }
@@ -92,10 +90,9 @@ fun ConfigurationInactivityTimer(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(Unit) {
-                // Usamos awaitPointerEventScope para interceptar eventos antes que los hijos
+                // Usamos awaitPointerEventScope para interceptar cualquier click
                 awaitPointerEventScope {
                     while (true) {
-                        // PointerEventPass.Initial permite ver el evento ANTES que los hijos
                         awaitPointerEvent(PointerEventPass.Initial)
                         interactionCount++
                     }
@@ -110,7 +107,9 @@ fun ConfigurationInactivityTimer(
         )
     }
 }
-
+/**
+ * Compose con los demas composes que muestra la vista de configuracion
+ */
 @Composable
 fun ConfigurationCompose(
     modifier: Modifier,
@@ -137,18 +136,21 @@ fun ConfigurationCompose(
                 .fillMaxSize()
                 .padding(32.dp)
         ){
+            // Demas composes
             ConfigurationTitle()
             Spacer(Modifier.size(40.dp))
             DeviceName(viewModel, focusManager, onActivity)
             Spacer(Modifier.size(20.dp))
             OdooURL(viewModel, focusManager, onActivity)
             Spacer(Modifier.size(20.dp))
-            AndroidId()
+            AndroidId(viewModel)
         }
 
     }
 }
-
+/**
+ * Titulo de la vista
+ */
 @Composable
 fun ConfigurationTitle(){
     Row(
@@ -168,7 +170,9 @@ fun ConfigurationTitle(){
         )
     }
 }
-
+/**
+ * Text field que muestra el nombre del dispositivo
+ */
 @Composable
 fun DeviceName(viewModel: SettingsViewModel, focusManager: FocusManager, onActivity: () -> Unit){
     // Control de Nombre del Dispositivo
@@ -209,7 +213,9 @@ fun DeviceName(viewModel: SettingsViewModel, focusManager: FocusManager, onActiv
         singleLine = true
     )
 }
-
+/**
+ * Compose que muestra un textField con la url a odoo
+ */
 @Composable
 fun OdooURL(viewModel: SettingsViewModel, focusManager: FocusManager, onActivity: () -> Unit){
     // Control de Nombre del Dispositivo
@@ -244,18 +250,14 @@ fun OdooURL(viewModel: SettingsViewModel, focusManager: FocusManager, onActivity
 
     )
 }
-
+/**
+ * Texto que muestra el android id
+ */
 @SuppressLint("HardwareIds")
 @Composable
-fun AndroidId(){
+fun AndroidId(viewModel: SettingsViewModel,){
 
-    val context = LocalContext.current
-
-    val androidId = Settings.Secure.getString(
-        context.contentResolver,
-        Settings.Secure.ANDROID_ID
-    )
-
+    val androidId = viewModel.androidId
     Text(
         "Android ID: $androidId",
         color = Color.Black
