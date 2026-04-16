@@ -40,6 +40,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import com.example.mayatimegate.R
 import com.example.mayatimegate.viewmodel.SettingsViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.collect
 
 /**
  * Vista de configuracion de la aplicacion
@@ -180,25 +183,34 @@ fun DeviceName(viewModel: SettingsViewModel, focusManager: FocusManager, onActiv
 
     var localName by remember { mutableStateOf("") }
 
-    // Sincronizamos el estado local cuando el guardado cambie
+    //Funciones para guardar el texto y optimizar DataStore
+
     LaunchedEffect(deviceNameSaved) {
         localName = deviceNameSaved
     }
 
-    OutlinedTextField(
+    LaunchedEffect(localName) {
+        snapshotFlow { localName }
+            .debounce(300)
+            .distinctUntilChanged()
+            .collect {
+                viewModel.updateDeviceName(it)
+                onActivity()
+            }
+    }
+
+    OutlinedTextField( //Textfiel para introducir el nombre del dispositivo
         modifier = Modifier
             .fillMaxWidth()
             .pointerInput(Unit) {
                 detectTapGestures(onTap = {
-                    focusManager.clearFocus() // Esto quita el cursor y cierra el teclado
+                    focusManager.clearFocus()
                 })
             },
 
         value = localName,
         onValueChange = {
             localName = it
-            viewModel.updateDeviceName(it)
-            onActivity()
         },
 
         label = { Text("Nombre del dispositivo") },
@@ -228,13 +240,27 @@ fun OdooURL(viewModel: SettingsViewModel, focusManager: FocusManager, onActivity
         localUrl = UrlSaved
     }
 
+    LaunchedEffect(localUrl) {
+        snapshotFlow { localUrl }
+            .debounce(300)
+            .distinctUntilChanged()
+            .collect {
+                viewModel.updateUrlName(it)
+                onActivity()
+            }
+    }
+
     OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus()
+                })
+            },
         value = localUrl,
         onValueChange = {
             localUrl = it
-            viewModel.updateUrlName(it)
-            onActivity()
         },
         label = { Text("URL de Odoo") },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
