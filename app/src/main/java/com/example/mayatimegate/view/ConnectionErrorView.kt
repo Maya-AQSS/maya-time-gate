@@ -113,13 +113,13 @@ fun ConnectionErrorCompose(modifier: Modifier, onClick: () -> Unit){
 @Composable
 fun ConnectionErrorText(){
     Image(
-        painter = painterResource(R.drawable.ic_wifi_off),
+        painter = painterResource(R.drawable.ic_warning),
         contentDescription = "Icono Error conexion",
         modifier = Modifier.size(200.dp)
     )
     Spacer(Modifier.size(24.dp))
     Text(
-        text = "Error de conexión",
+        text = "Error con la conexión al servidor",
         color = Color(0xFFDD4150),
         style = MaterialTheme.typography.displaySmall
     )
