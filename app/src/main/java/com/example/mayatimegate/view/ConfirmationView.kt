@@ -53,8 +53,10 @@ fun ConfirmationView(
                 onTimeOver()
             }else if(employee?.status == "error"){ //si se muestra error
 
-                if(employee?.message == "connection-error"){ //si es de conexion
+                if(employee?.message == "connection-error") { //si es de conexion
                     navController.navigate("connection_error")
+//                }else if(employee?.message == "url-error"){ //navegacion a la vista de error de url
+//                    navController.navigate("url_error")
                 }else{ //si es un error normal
                     navController.navigate("error")
                 }
