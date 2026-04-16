@@ -117,18 +117,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-//                    composable("url_error") {
-//                        UrlView(
-//                            onTimeOver = {
-//                                navController.navigate("login") {
-//                                    popUpTo("login") { inclusive = true }
-//                                    launchSingleTop = true
-//                                }
-//                            },
-//                            navController = navController
-//                        )
-//                    }
-
                     composable("configuration") {
                         ConfigurationView(
                             onTimeOver = { navController.popBackStack() },
