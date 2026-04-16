@@ -46,7 +46,7 @@ class EmployeeViewModel: ViewModel(){
                     null,
                     null,
                     null,
-                    message = "Error de conexion")
+                    message = "connection-error")
                 errorMessage.value = "Fallo en red: ${t.message}"
             }
         })
@@ -54,7 +54,7 @@ class EmployeeViewModel: ViewModel(){
     }
 
     fun searchByDni(stringDni: String){
-        val dni = stringDni.toIntOrNull()
+        val dni = stringDni.toLongOrNull()
         if (dni != null){
             val letter = calculateLetterOfDni(dni)
             val officialDni = stringDni + letter
@@ -85,7 +85,7 @@ class EmployeeViewModel: ViewModel(){
                         null,
                         null,
                         null,
-                        message = "Error de conexion")
+                        message = "connection-error")
                     errorMessage.value = "Fallo en red: ${t.message}"
                 }
             })
@@ -110,23 +110,23 @@ class EmployeeViewModel: ViewModel(){
 
 
     //Funcion para calcular la letra del dni en funcion de los numeros introducidos
-    fun calculateLetterOfDni(dni:Int): String{
+    fun calculateLetterOfDni(dni:Long): String{
         return when (dni % 23){
-            0 -> "T"
-            1 -> "R"
-            2 -> "W"
-            3 -> "A"
-            4 -> "G"
-            5 -> "M"
-            6 -> "Y"
-            7 -> "F"
-            8 -> "P"
-            9 -> "D"
-            10 -> "X"
-            11 -> "B"
-            12 -> "N"
-            13 -> "J"
-            14 -> "Z"
+            0L -> "T"
+            1L -> "R"
+            2L -> "W"
+            3L -> "A"
+            4L -> "G"
+            5L -> "M"
+            6L -> "Y"
+            7L -> "F"
+            8L -> "P"
+            9L -> "D"
+            10L -> "X"
+            11L -> "B"
+            12L -> "N"
+            13L -> "J"
+            14L -> "Z"
             else -> "S"
         }
     }

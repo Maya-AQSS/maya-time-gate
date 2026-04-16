@@ -46,17 +46,20 @@ fun ConfirmationView(
 
     // Temporizador de visualizacion
     LaunchedEffect(employee) {
-        println("DEBUG: El estado del empleado es: ${employee?.status}")
+        println("DEBUG: El estado del empleado es: $employee")
         if(employee != null){
             if(employee?.status == "success"){ //si el empleado existe se muesta
                 delay(2000)
-                viewModel.resetData()
                 onTimeOver()
-            }else if(employee?.status == "error"){ //si no se muestra error
-                navController.navigate("error")
-                viewModel.resetData()
+            }else if(employee?.status == "error"){ //si se muestra error
 
+                if(employee?.message == "connection-error"){ //si es de conexion
+                    navController.navigate("connection_error")
+                }else{ //si es un error normal
+                    navController.navigate("error")
+                }
             }
+            viewModel.resetData()
         }
 
     }

@@ -162,11 +162,9 @@ class MainActivity : ComponentActivity() {
             if (navController.currentDestination?.route == "login") {
                 //navegamos a la pantalla de confirmacion
                 employeeViewModel.searchByRfid(id)
-
                     navController.navigate("confirmation") {
                         launchSingleTop = true
                     }
-                
 
             }
         }

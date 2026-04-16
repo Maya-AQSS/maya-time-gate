@@ -11,7 +11,7 @@ class EmployeeRepository { //Repositorio que implementa las demas clases para re
         return api.getEmployeeByRfid(rfid)
     }
 
-    fun searchEmployeeByDni(dni: Int): Call<EmployeeResponse>{ //busca por dni
+    fun searchEmployeeByDni(dni: String): Call<EmployeeResponse>{ //busca por dni
         return api.getEmployeeByDni(dni)
     }
 }
