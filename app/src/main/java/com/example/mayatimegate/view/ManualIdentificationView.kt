@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -89,9 +90,12 @@ fun InactivityTimer(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(Unit) {
-                awaitEachGesture {
-                    awaitFirstDown() // Detecta el primer contacto
-                    interactionCount++ // Reinicia el timer
+                awaitPointerEventScope {
+                    while (true) {
+                        // PointerEventPass.Initial permite ver el evento ANTES que los hijos
+                        awaitPointerEvent(PointerEventPass.Initial)
+                        interactionCount++
+                    }
                 }
             }
     ) {
