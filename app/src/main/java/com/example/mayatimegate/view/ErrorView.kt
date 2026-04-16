@@ -23,7 +23,7 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun ErrorView(navController: NavHostController, onTimeOver: () -> Unit, viewModel: EmployeeViewModel) {
-    // Temporizador de seguridad: redirige al login tras 4 segundos de inactividad
+    // Redirige al login tras 4 segundos de inactividad
     LaunchedEffect(Unit) {
         delay(4000)
         viewModel.resetData()

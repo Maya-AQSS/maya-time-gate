@@ -1,44 +1,32 @@
 package com.example.mayatimegate.viewmodel
 
-import android.util.Log
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
 import com.example.mayatimegate.data.EmployeeRepository
+import com.example.mayatimegate.data.SettingsManager
 import com.example.mayatimegate.model.EmployeeResponse
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class EmployeeViewModel: ViewModel(){
-    private val repository = EmployeeRepository() //Inicializacion del repositorio
+class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los empleados
+    private val settingsManager: SettingsManager
+) : ViewModel() {
 
-    val employeeInfo = MutableLiveData<EmployeeResponse?>() // inicializacion del empleado
-    val errorMessage = MutableLiveData<String?>() //inicializacion por si hay algun error
+    //Variables
+    private val repository = EmployeeRepository()
 
-    fun searchByRfid(rfid: String){
-        val call = repository.searchEmployeeByRfid(rfid)
+    val employeeInfo = MutableLiveData<EmployeeResponse?>()
+    val errorMessage = MutableLiveData<String?>()
 
-        call.enqueue(object : Callback<EmployeeResponse>{
-            override fun onResponse(employee: Call<EmployeeResponse>, response: Response<EmployeeResponse>){
-                //si se encuentra al empleado en odoo se guarda su informaicon en el objeto employeeInfo
-                if (response.isSuccessful){
-                    val serverResponse = response.body()
-                    //Si va bien se le da valor al empleado
-                    employeeInfo.value = serverResponse
+    fun searchByRfid(rfid: String) { //Funcion para buscar empleado por RFID
+        viewModelScope.launch {
 
-                    if(serverResponse != null && serverResponse.status == "success"){
-                        errorMessage.value = null
-                    }else{
-                        //si hay algun error se le da valor al error
-                        errorMessage.value = serverResponse?.message ?: "Empleado no encontrado"
-
-                    }
-
-                }else{
-                    errorMessage.value = "Error en el servidor: ${response.code()}"
-                }
-            }
-            override fun onFailure(employee: Call<EmployeeResponse>, t: Throwable){
+            val currentUrl = settingsManager.formattedUrl.first()
+            //Si la url es incorrecta no busca y se indica que hay un error
+            if (!isValidBaseUrl(currentUrl)) {
                 employeeInfo.value = EmployeeResponse(
                     status = "error",
                     null,
@@ -46,38 +34,37 @@ class EmployeeViewModel: ViewModel(){
                     null,
                     null,
                     null,
-                    message = "connection-error")
-                errorMessage.value = "Fallo en red: ${t.message}"
+                    message = "url-error"
+                )
+                errorMessage.value = "URL inválida. Revise la configuración"
+                return@launch
             }
-        })
+            //Llamada al repositorio para buscar al empleado
+            val call = repository.searchEmployeeByRfid(rfid, currentUrl)
 
-    }
-
-    fun searchByDni(stringDni: String){
-        val dni = stringDni.toLongOrNull()
-        if (dni != null){
-            val letter = calculateLetterOfDni(dni)
-            val officialDni = stringDni + letter
-            val call = repository.searchEmployeeByDni(officialDni)
             call.enqueue(object : Callback<EmployeeResponse>{
-                override fun onResponse(employee: Call<EmployeeResponse>, response: Response<EmployeeResponse>){
-                    //si se encuentra al empleado en odoo se guarda su informaicon en el objeto employeeInfo
-                    if (response.isSuccessful){
+
+                override fun onResponse( //Funcion que da valor al empleado
+                    call: Call<EmployeeResponse>,
+                    response: Response<EmployeeResponse>
+                ) {
+                    if (response.isSuccessful) {
                         val serverResponse = response.body()
-                        //Si va bien se le da valor al empleado
                         employeeInfo.value = serverResponse
-                        if(serverResponse != null && serverResponse.status == "success"){
+
+                        if (serverResponse != null && serverResponse.status == "success") {
                             errorMessage.value = null
-                        }else{
-                            //si hay algun error se le da valor al error
-                            errorMessage.value = serverResponse?.message ?: "Empleado no encontrado"
+                        } else {
+                            errorMessage.value =
+                                serverResponse?.message ?: "Empleado no encontrado"
                         }
 
-                    }else{
+                    } else {
                         errorMessage.value = "Error en el servidor: ${response.code()}"
                     }
                 }
-                override fun onFailure(employee: Call<EmployeeResponse>, t: Throwable){
+                //Funcion en caso de error de conexion
+                override fun onFailure(call: Call<EmployeeResponse>, t: Throwable) {
                     employeeInfo.value = EmployeeResponse(
                         status = "error",
                         null,
@@ -85,33 +72,99 @@ class EmployeeViewModel: ViewModel(){
                         null,
                         null,
                         null,
-                        message = "connection-error")
+                        message = "connection-error"
+                    )
                     errorMessage.value = "Fallo en red: ${t.message}"
                 }
             })
-        }else{
-            employeeInfo.value = EmployeeResponse(
-                status = "error",
-                null,
-                null,
-                null,
-                null,
-                null,
-                message = "DNI demasiado largo")
         }
-
     }
 
-    //Borra toda la informacion
-    fun resetData(){
-        employeeInfo.value= null
-        errorMessage.value= null
+    fun searchByDni(stringDni: String) { //Funcion para buscar empleado por dni
+        viewModelScope.launch {
+
+            val currentUrl = settingsManager.formattedUrl.first()
+            //En caso de que la url sea incorrecta, mostramos error
+            if (!isValidBaseUrl(currentUrl)) {
+                employeeInfo.value = EmployeeResponse(
+                    status = "error",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    message = "url-error"
+                )
+                errorMessage.value = "URL inválida. Revise la configuración"
+                return@launch
+            }
+            val dni = stringDni.toLongOrNull()
+
+            if (dni != null) { // si el dni tiene un tamaño aceptable
+                val letter = calculateLetterOfDni(dni) //calculamos la letra del dni
+                val officialDni = stringDni + letter //concatenamos las letras con el numero
+
+                //buscamos al empleado por el dni
+                val call = repository.searchEmployeeByDni(officialDni, currentUrl)
+
+                call.enqueue(object : Callback<EmployeeResponse> {
+
+                    override fun onResponse( //funcion que le da valor al empleado
+                        call: Call<EmployeeResponse>,
+                        response: Response<EmployeeResponse>
+                    ) {
+                        if (response.isSuccessful) {
+                            val serverResponse = response.body()
+                            employeeInfo.value = serverResponse
+
+                            if (serverResponse != null && serverResponse.status == "success") {
+                                errorMessage.value = null
+                            } else {
+                                errorMessage.value =
+                                    serverResponse?.message ?: "Empleado no encontrado"
+                            }
+
+                        } else {
+                            errorMessage.value =
+                                "Error en el servidor: ${response.code()}"
+                        }
+                    }
+                    //Funcion que le da valor al empleado en caso de error
+                    override fun onFailure(call: Call<EmployeeResponse>, t: Throwable) {
+                        employeeInfo.value = EmployeeResponse(
+                            status = "error",
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            message = "connection-error"
+                        )
+                        errorMessage.value = "Fallo en red: ${t.message}"
+                    }
+                })
+
+            } else { //si el dni es demasiado largo
+                employeeInfo.value = EmployeeResponse(
+                    status = "error",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    message = "DNI demasiado largo"
+                )
+            }
+        }
     }
 
+    fun resetData() { //Funcion que borra los datos volver a crear un empleado de nuevo
+        employeeInfo.value = null
+        errorMessage.value = null
+    }
 
-    //Funcion para calcular la letra del dni en funcion de los numeros introducidos
-    fun calculateLetterOfDni(dni:Long): String{
-        return when (dni % 23){
+    fun calculateLetterOfDni(dni: Long): String { //funcion que calcula la letra del dni
+        return when (dni % 23) {
             0L -> "T"
             1L -> "R"
             2L -> "W"
@@ -129,5 +182,26 @@ class EmployeeViewModel: ViewModel(){
             14L -> "Z"
             else -> "S"
         }
+    }
+    //funcion que comprueba si la url de odoo tiene un formato adecuado
+    private fun isValidBaseUrl(url: String): Boolean {
+        return try {
+            url.toHttpUrl()
+            true
+        } catch (e: IllegalArgumentException) {
+            false
+        }
+    }
+}
+
+//Clase factory que crea una instancia de EmployeeViewModel
+class EmployeeViewModelFactory(private val settingsManager: SettingsManager) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(EmployeeViewModel::class.java)) {
+            //Si el view model es EmployeeViewModel devolvemos la instancia
+            return EmployeeViewModel(settingsManager) as T
+        }
+        //Si hay algun error controlamos la excepcion
+        throw IllegalArgumentException("Clase viewModel desconocida")
     }
 }
