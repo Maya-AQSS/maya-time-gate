@@ -98,7 +98,6 @@ fun ConfirmationCompose(employee: EmployeeResponse, modifier: Modifier) {
             // Mostramos el texto de éxito con el nombre real
             InformationalText(userName, employee.isSigned)
 
-
         }
     }
 }
