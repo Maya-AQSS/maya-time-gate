@@ -44,9 +44,9 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                 return@launch
             }
 
-            val employee = getEmployeeFromHashMap(rfid)
+            val employee = getEmployeeFromHashMap(rfid) //se busca el empleado en el HashMap
 
-            if(employee == null){
+            if(employee == null){ //Si no se encuentra el empleado en memoria
                 //Llamada al repositorio para buscar al empleado
                 val call = repository.searchEmployeeByRfid(rfid, currentUrl)
 
@@ -58,9 +58,10 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     ) {
                         if (response.isSuccessful) {
                             val serverResponse = response.body()
-                            employeeInfo.value = serverResponse
-
+                            employeeInfo.value = serverResponse //Se le da valor al objeto
+                            employeeInfo.value?.rfid = rfid  //Como el rfid no esta en el json de la api se le da valor
                             if (serverResponse != null && serverResponse.status == "success") {
+                                saveEmployee(employeeInfo.value) //se guarda el empleado en memoria
                                 employeeInfo.value?.changeSignedState()
                                 errorMessage.value = null
                             } else {
@@ -87,9 +88,9 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                         errorMessage.value = "Fallo en red: ${t.message}"
                     }
                 })
-            }else{
-                employee.changeSignedState()
-                employeeInfo.value = employee
+            }else{ //si el empleado ya existe en memoria
+                employee.changeSignedState()  //se le cambia el estado de fichaje
+                employeeInfo.value = employee //se le da valor al objeto empleado
                 errorMessage.value = null
             }
         }
