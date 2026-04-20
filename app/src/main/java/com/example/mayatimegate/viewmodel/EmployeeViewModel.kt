@@ -17,9 +17,12 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
 
     //Variables
     private val repository = EmployeeRepository()
-
     val employeeInfo = MutableLiveData<EmployeeResponse?>()
     val errorMessage = MutableLiveData<String?>()
+
+    //HashMap para guardar la informacion de los empleados dependiendo de su identificador de fihcajes
+    private val hashMapRfid: HashMap<String, EmployeeResponse> = hashMapOf()
+    private val hashMapDni: HashMap<String, EmployeeResponse> = hashMapOf()
 
     fun searchByRfid(rfid: String) { //Funcion para buscar empleado por RFID
         viewModelScope.launch {
@@ -34,49 +37,61 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     null,
                     null,
                     null,
+                    null,
                     message = "connection-error"
                 )
                 errorMessage.value = "URL inválida. Revise la configuración"
                 return@launch
             }
-            //Llamada al repositorio para buscar al empleado
-            val call = repository.searchEmployeeByRfid(rfid, currentUrl)
 
-            call.enqueue(object : Callback<EmployeeResponse>{
+            val employee = getEmployeeFromHashMap(rfid)
 
-                override fun onResponse( //Funcion que da valor al empleado
-                    call: Call<EmployeeResponse>,
-                    response: Response<EmployeeResponse>
-                ) {
-                    if (response.isSuccessful) {
-                        val serverResponse = response.body()
-                        employeeInfo.value = serverResponse
+            if(employee == null){
+                //Llamada al repositorio para buscar al empleado
+                val call = repository.searchEmployeeByRfid(rfid, currentUrl)
 
-                        if (serverResponse != null && serverResponse.status == "success") {
-                            errorMessage.value = null
+                call.enqueue(object : Callback<EmployeeResponse>{
+
+                    override fun onResponse( //Funcion que da valor al empleado
+                        call: Call<EmployeeResponse>,
+                        response: Response<EmployeeResponse>
+                    ) {
+                        if (response.isSuccessful) {
+                            val serverResponse = response.body()
+                            employeeInfo.value = serverResponse
+
+                            if (serverResponse != null && serverResponse.status == "success") {
+                                employeeInfo.value?.changeSignedState()
+                                errorMessage.value = null
+                            } else {
+                                errorMessage.value =
+                                    serverResponse?.message ?: "Empleado no encontrado"
+                            }
+
                         } else {
-                            errorMessage.value =
-                                serverResponse?.message ?: "Empleado no encontrado"
+                            errorMessage.value = "Error en el servidor: ${response.code()}"
                         }
-
-                    } else {
-                        errorMessage.value = "Error en el servidor: ${response.code()}"
                     }
-                }
-                //Funcion en caso de error de conexion
-                override fun onFailure(call: Call<EmployeeResponse>, t: Throwable) {
-                    employeeInfo.value = EmployeeResponse(
-                        status = "error",
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        message = "connection-error"
-                    )
-                    errorMessage.value = "Fallo en red: ${t.message}"
-                }
-            })
+                    //Funcion en caso de error de conexion
+                    override fun onFailure(call: Call<EmployeeResponse>, t: Throwable) {
+                        employeeInfo.value = EmployeeResponse(
+                            status = "error",
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            message = "connection-error"
+                        )
+                        errorMessage.value = "Fallo en red: ${t.message}"
+                    }
+                })
+            }else{
+                employee.changeSignedState()
+                employeeInfo.value = employee
+                errorMessage.value = null
+            }
         }
     }
 
@@ -93,6 +108,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     null,
                     null,
                     null,
+                    null,
                     message = "connection-error"
                 )
                 errorMessage.value = "URL inválida. Revise la configuración"
@@ -104,45 +120,58 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                 val letter = calculateLetterOfDni(dni) //calculamos la letra del dni
                 val officialDni = stringDni + letter //concatenamos las letras con el numero
 
-                //buscamos al empleado por el dni
-                val call = repository.searchEmployeeByDni(officialDni, currentUrl)
+                //Buscamos si tenemos guardado el empleado en el hashmap
+                val employee = getEmployeeFromHashMap(officialDni)
+                if(employee == null){
+                    //Si no lo tenemos
+                    //buscamos al empleado por el dni
+                    val call = repository.searchEmployeeByDni(officialDni, currentUrl)
 
-                call.enqueue(object : Callback<EmployeeResponse> {
+                    call.enqueue(object : Callback<EmployeeResponse> {
 
-                    override fun onResponse( //funcion que le da valor al empleado
-                        call: Call<EmployeeResponse>,
-                        response: Response<EmployeeResponse>
-                    ) {
-                        if (response.isSuccessful) {
-                            val serverResponse = response.body()
-                            employeeInfo.value = serverResponse
+                        override fun onResponse( //funcion que le da valor al empleado
+                            call: Call<EmployeeResponse>,
+                            response: Response<EmployeeResponse>
+                        ) {
+                            if (response.isSuccessful) {
+                                val serverResponse = response.body()
+                                employeeInfo.value = serverResponse
 
-                            if (serverResponse != null && serverResponse.status == "success") {
-                                errorMessage.value = null
+                                if (serverResponse != null && serverResponse.status == "success") {
+                                    saveEmployee(employeeInfo.value)
+                                    employeeInfo.value?.changeSignedState()
+                                    errorMessage.value = null
+                                } else {
+                                    errorMessage.value =
+                                        serverResponse?.message ?: "Empleado no encontrado"
+                                }
+
                             } else {
                                 errorMessage.value =
-                                    serverResponse?.message ?: "Empleado no encontrado"
+                                    "Error en el servidor: ${response.code()}"
                             }
-
-                        } else {
-                            errorMessage.value =
-                                "Error en el servidor: ${response.code()}"
                         }
-                    }
-                    //Funcion que le da valor al empleado en caso de error
-                    override fun onFailure(call: Call<EmployeeResponse>, t: Throwable) {
-                        employeeInfo.value = EmployeeResponse(
-                            status = "error",
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
-                            message = "connection-error"
-                        )
-                        errorMessage.value = "Fallo en red: ${t.message}"
-                    }
-                })
+                        //Funcion que le da valor al empleado en caso de error
+                        override fun onFailure(call: Call<EmployeeResponse>, t: Throwable) {
+                            employeeInfo.value = EmployeeResponse(
+                                status = "error",
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                message = "connection-error"
+                            )
+                            errorMessage.value = "Fallo en red: ${t.message}"
+                        }
+                    })
+                }else{
+                    employee.changeSignedState()
+                    employeeInfo.value = employee
+                    errorMessage.value = null
+                }
+
 
             } else { //si el dni es demasiado largo
                 employeeInfo.value = EmployeeResponse(
@@ -152,10 +181,31 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     null,
                     null,
                     null,
+                    null,
                     message = "DNI demasiado largo"
                 )
             }
         }
+
+    }
+
+    //Funcion para guardar en un hashmap la informacion de los empleados
+    fun saveEmployee(employee: EmployeeResponse?){
+        val rfid = employee?.rfid
+        val dni = employee?.dni
+
+
+        if(rfid != null){
+            hashMapRfid.put(rfid, employee)
+        }
+        if(dni != null){
+            hashMapDni.put(dni, employee)
+        }
+
+    }
+    //Funcion para encontrar la informacion de empleado en el hashmap
+    fun getEmployeeFromHashMap(key: String): EmployeeResponse?{
+        return hashMapRfid[key] ?: hashMapDni[key]
     }
 
     fun resetData() { //Funcion que borra los datos volver a crear un empleado de nuevo

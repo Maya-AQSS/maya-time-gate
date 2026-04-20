@@ -11,7 +11,7 @@ data class EmployeeResponse(
     @SerializedName("apellidos")
     val surname: String,
     val dni: String?,
-    val rfid: String?,
+    var rfid: String?,
     val imageUrl:String?,
     val message:String?,
     var isSigned: Boolean = false
@@ -19,4 +19,5 @@ data class EmployeeResponse(
     fun changeSignedState(){
         this.isSigned =  !isSigned
     }
+
 }
