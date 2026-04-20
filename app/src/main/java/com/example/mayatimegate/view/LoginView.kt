@@ -105,9 +105,10 @@ fun SettingsButton(onConfigClick: () -> Unit) {
             modifier = Modifier.focusProperties { canFocus = false },
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_more_vert),
+                painter = painterResource(id = R.drawable.ic_rounded_settings),
                 contentDescription = "Abrir configuracion",
-                Modifier.size(35.dp)
+                Modifier.size(35.dp),
+                tint = Color(0xFF313131),
             )
         }
     }
