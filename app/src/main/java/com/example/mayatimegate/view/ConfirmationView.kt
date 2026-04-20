@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.mayatimegate.R
@@ -111,7 +110,7 @@ fun ConfirmationCompose(employee: EmployeeResponse, modifier: Modifier) {
             Spacer(modifier = Modifier.height(40.dp))
 
             // Mostramos el texto de éxito con el nombre real
-            InformationalText(userName)
+            InformationalText(userName, employee.isSigned)
 
 
         }
@@ -173,7 +172,7 @@ fun CircleImage(userName: String, url: String?) {
  * Bloque de texto con el resumen de la operación realizada.
  */
 @Composable
-fun InformationalText(user:String) {
+fun InformationalText(user: String, signed: Boolean) {
     // Captura la hora exacta en el momento de la composición
     val currentTime = remember {
         LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
@@ -202,19 +201,33 @@ fun InformationalText(user:String) {
 
         Spacer(modifier = Modifier.size(20.dp))
 
-        // Saludo personalizado 
-        Text(
-            text = "Bienvenid@/Adios, $user",
-            style = MaterialTheme.typography.displaySmall
-        )
+        // Saludo personalizado
+        if(signed){
+            Text(
+                text = "Bienvenid@, $user",
+                style = MaterialTheme.typography.displaySmall
+            )
+        }else{
+            Text(
+                text = "Adios, $user",
+                style = MaterialTheme.typography.displaySmall
+            )
+        }
 
         Spacer(modifier = Modifier.size(42.dp))
 
         // Confirmación visual de la hora registrada
-        Text(
-            text = "Hora de entrada/salida: $currentTime",
-            style = MaterialTheme.typography.titleLarge
-        )
+        if(signed){
+            Text(
+                text = "Hora de entrada: $currentTime",
+                style = MaterialTheme.typography.titleLarge
+            )
+        }else{
+            Text(
+                text = "Hora de salida: $currentTime",
+                style = MaterialTheme.typography.titleLarge
+            )
+        }
     }
 }
 
