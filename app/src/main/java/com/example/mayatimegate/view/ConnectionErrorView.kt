@@ -34,7 +34,7 @@ fun ConnectionErrorView(
 
     // Temporizador de visualizacion
     LaunchedEffect(Unit) {
-        delay(2000)
+        delay(4000)
         onTimeOver()
     }
 
@@ -123,5 +123,11 @@ fun ConnectionErrorText(){
         text = "Error con la conexión al servidor",
         color = Color(0xFFDD4150),
         style = MaterialTheme.typography.displaySmall
+    )
+    Spacer(Modifier.size(16.dp))
+    Text(
+        text = "Comprueba la conexión a Intenet o la URL del servidor",
+        color = Color(0xFFDD4150),
+        style = MaterialTheme.typography.titleMedium
     )
 }
