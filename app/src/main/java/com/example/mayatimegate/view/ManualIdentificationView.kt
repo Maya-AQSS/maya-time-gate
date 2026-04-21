@@ -323,7 +323,6 @@ fun PassTextField(isError: Boolean, onValueReady: (String) -> Unit, focusManager
         keyboardActions = KeyboardActions(
             onDone = {
                 focusManager.clearFocus() // Esconde el teclado
-                // Opcional: podrías llamar aquí a la lógica de validación
             }
         ),
         trailingIcon = {

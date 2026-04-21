@@ -131,8 +131,6 @@ fun CircleImage(userName: String, url: String?) {
                 contentDescription = "Foto de perfil",
                 placeholder = painterResource(R.drawable.logo_ceedcv), // Una imagen gris o logo
                 error = painterResource(R.drawable.ic_error), // Una imagen de aviso
-                onLoading = { println("Coil: Cargando...") },
-                onError = { error -> println("Coil error: ${error.result.throwable}") },
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
