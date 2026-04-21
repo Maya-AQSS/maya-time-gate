@@ -1,9 +1,13 @@
 package com.example.mayatimegate.viewmodel
 
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.*
 import com.example.mayatimegate.data.EmployeeRepository
+import com.example.mayatimegate.data.RetrofitClient
 import com.example.mayatimegate.data.SettingsManager
+import com.example.mayatimegate.model.AttendanceParams
 import com.example.mayatimegate.model.EmployeeResponse
+import com.example.mayatimegate.model.OdooRequest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -63,6 +67,11 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                             if (serverResponse != null && serverResponse.status == "success") {
                                 saveEmployee(employeeInfo.value) //se guarda el empleado en memoria
                                 employeeInfo.value?.changeSignedState()
+
+                                val employeeId = employeeInfo.value?.odooId
+                                val employeeState = employeeInfo.value?.isSigned
+                                // Se guarda la informacion de fichaje en odoo
+                                logSigning(employeeId, employeeState, currentUrl)
                                 errorMessage.value = null
                             } else {
                                 errorMessage.value =
@@ -91,6 +100,10 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
             }else{ //si el empleado ya existe en memoria
                 employee.changeSignedState()  //se le cambia el estado de fichaje
                 employeeInfo.value = employee //se le da valor al objeto empleado
+                val employeeId = employeeInfo.value?.odooId
+                val employeeState = employeeInfo.value?.isSigned
+                // Se guarda el fichaje en odoo
+                logSigning(employeeId, employeeState, currentUrl)
                 errorMessage.value = null
             }
         }
@@ -141,6 +154,11 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                                 if (serverResponse != null && serverResponse.status == "success") {
                                     saveEmployee(employeeInfo.value)
                                     employeeInfo.value?.changeSignedState()
+
+                                    val employeeId = employeeInfo.value?.odooId
+                                    val employeeState = employeeInfo.value?.isSigned
+                                    // Guarda la info del fichaje en odoo
+                                    logSigning(employeeId, employeeState, currentUrl )
                                     errorMessage.value = null
                                 } else {
                                     errorMessage.value =
@@ -170,6 +188,10 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                 }else{
                     employee.changeSignedState()
                     employeeInfo.value = employee
+                    val employeeId = employeeInfo.value?.odooId
+                    val employeeState = employeeInfo.value?.isSigned
+                    // Llama a la funcion para guardar el fichaje en odoo
+                    logSigning(employeeId, employeeState, currentUrl)
                     errorMessage.value = null
                 }
 
@@ -241,6 +263,36 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
             true
         } catch (e: IllegalArgumentException) {
             false
+        }
+    }
+
+    //Funcion para enviar datos a la api que registrara los fichajes de los empleados
+    fun logSigning(employeeId: Int?, state: Boolean?, urlServidor: String) {
+        viewModelScope.launch {
+            //Comprueba que el id y el estado del empleado no sean nulos
+            if (employeeId == null || state == null) {
+                return@launch
+            }
+            //Consigue el nombre del dispositivo y el estado del empleado
+            val deviceName = settingsManager.deviceName.first()
+            val apiState = if(state) "I" else "O"
+
+            val request = OdooRequest( // Crea el mensaje que le mandara a la api
+                params = AttendanceParams(
+                    employee_id =employeeId,
+                    type = apiState,
+                    terminal_id =deviceName,
+                    location_id = 1
+                )
+            )
+
+            try {
+                //Llamada a la api para enviarle los datos del empleado
+                RetrofitClient.getOdooApi(urlServidor).logAttendance(request)
+            } catch (e: Exception) {
+                println("Error al guardar los datos en attendance: ${e.message}")
+
+            }
         }
     }
 }
