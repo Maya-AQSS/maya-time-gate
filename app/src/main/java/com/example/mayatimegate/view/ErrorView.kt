@@ -6,15 +6,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mayatimegate.R
 import androidx.navigation.NavHostController
+import com.example.mayatimegate.utils.SoundManager
 import com.example.mayatimegate.viewmodel.EmployeeViewModel
 import kotlinx.coroutines.delay
 
@@ -22,9 +25,19 @@ import kotlinx.coroutines.delay
  * Vista de error que gestiona el ciclo de vida y la navegación automática.
  */
 @Composable
-fun ErrorView(navController: NavHostController, onTimeOver: () -> Unit, viewModel: EmployeeViewModel) {
+fun ErrorView(
+    navController: NavHostController,
+    onTimeOver: () -> Unit,
+    viewModel: EmployeeViewModel,
+    soundManager: SoundManager
+) {
+    // Obtenemos el contexto de Android (necesario para SoundPool)
+    //val context = LocalContext.current
+    //val soundManager = remember { SoundManager(context) }
     // Redirige al login tras 4 segundos de inactividad
     LaunchedEffect(Unit) {
+        delay(200)
+        soundManager.play("error")
         delay(4000)
         viewModel.resetData()
         delay(100)
