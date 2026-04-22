@@ -6,18 +6,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.mayatimegate.data.EmployeeRepository
 import com.example.mayatimegate.ui.theme.MayaTimeGateTheme
 import com.example.mayatimegate.viewmodel.EmployeeViewModel
 import com.example.mayatimegate.data.SettingsManager
+import com.example.mayatimegate.utils.SoundManager
 import com.example.mayatimegate.viewmodel.EmployeeViewModelFactory
 import com.example.mayatimegate.viewmodel.SettingsViewModel
 import com.example.mayatimegate.viewmodel.SettingsViewModelFactory
@@ -31,6 +29,7 @@ class MainActivity : ComponentActivity() {
     private val employeeViewModel: EmployeeViewModel by viewModels {
         EmployeeViewModelFactory(SettingsManager(this))
     }
+    //val context = LocalContext.current
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +37,7 @@ class MainActivity : ComponentActivity() {
 
         //Inicializamos el SettingsManager
         val settingsManager = SettingsManager(this)
+        val soundManager = SoundManager(this)
 
         setContent {
             //Obtenemos el SettingsViewModel usando su Factory específica
@@ -67,7 +67,8 @@ class MainActivity : ComponentActivity() {
                                     launchSingleTop = true
                                     restoreState = true
                                 }
-                            }
+                            },
+
                         )
                     }
 
@@ -88,7 +89,8 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             viewModel = employeeViewModel,
-                            navController = navController
+                            navController = navController,
+                            soundManager = soundManager
                         )
                     }
 
@@ -101,7 +103,8 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             navController = navController,
-                            viewModel = employeeViewModel
+                            viewModel = employeeViewModel,
+                            soundManager = soundManager
                         )
                     }
 
@@ -113,7 +116,8 @@ class MainActivity : ComponentActivity() {
                                     launchSingleTop = true
                                 }
                             },
-                            navController = navController
+                            navController = navController,
+                            soundManager = soundManager
                         )
                     }
 

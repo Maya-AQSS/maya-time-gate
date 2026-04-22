@@ -27,6 +27,8 @@ import java.time.format.DateTimeFormatter
 import coil.compose.AsyncImage
 import com.example.mayatimegate.model.EmployeeResponse
 import com.example.mayatimegate.viewmodel.EmployeeViewModel
+import androidx.compose.ui.platform.LocalContext
+import com.example.mayatimegate.utils.SoundManager
 
 /**
  * Vista de Éxito: Se muestra tras una identificación correcta.
@@ -37,54 +39,89 @@ import com.example.mayatimegate.viewmodel.EmployeeViewModel
 fun ConfirmationView(
     onTimeOver: () -> Unit,
     viewModel: EmployeeViewModel,
-    navController: NavHostController
+    navController: NavHostController,
+    soundManager: SoundManager
 ) {
 
+    // Observamos el estado del empleado desde el ViewModel
     val employee by viewModel.employeeInfo.observeAsState()
 
+    // Obtenemos el contexto de Android (necesario para SoundPool)
+    //val context = LocalContext.current
 
-    // Temporizador de visualizacion
-    LaunchedEffect(employee) {
+    // Creamos el SoundManager UNA sola vez (gracias a remember)
+    //val soundManager = remember { SoundManager(context) }
+
+    // Este bloque se ejecuta cuando cambia el estado (success / error)
+    LaunchedEffect(employee?.status) {
+
         println("DEBUG: El estado del empleado es: $employee")
-        if(employee != null){
-            if(employee?.status == "success"){ //si el empleado existe se muesta
-                delay(2000)
-                onTimeOver()
-            }else if(employee?.status == "error"){ //si se muestra error
 
-                if(employee?.message == "connection-error") { //si es de conexion
-                    navController.navigate("connection_error")
-                }else{ //si es un error normal
-                    navController.navigate("error")
+        // Solo actuamos si hay datos
+        if (employee != null) {
+
+            when (employee?.status) {
+
+                "success" -> {
+                    // Reproducimos sonido dependiendo si entra o sale
+                    if (employee!!.isSigned) {
+                        soundManager.play("success-in")
+                    } else {
+                        soundManager.play("success-out")
+                    }
+
+                    // Esperamos 2 segundos antes de salir de la pantalla
+                    delay(3000)
+
+                    // Avisamos al padre para cambiar de pantalla
+                    onTimeOver()
+                }
+
+                "error" -> {
+
+                    // Navegación según tipo de error
+                    if (employee!!.message == "connection-error") {
+                        navController.navigate("connection_error")
+                    } else {
+                        navController.navigate("error")
+                    }
                 }
             }
+
+            // Reseteamos el estado en el ViewModel para evitar repeticiones
             viewModel.resetData()
         }
-
     }
 
+    // UI de la pantalla
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
-        if (employee?.name != null) { //solo se muestra si el empleado tiene nombre
+
+        // Si hay datos del empleado mostramos la confirmación
+        if (employee?.name != null) {
+
             ConfirmationCompose(
                 employee = employee!!,
                 modifier = Modifier.padding(innerPadding)
             )
+
         } else {
-           //Mientras cargan los datos o no los encuentra
-                LoadingCompose()
+            // Si no hay datos mostramos loading
+            LoadingCompose()
         }
     }
 }
-
 /**
  * Maquetación de la tarjeta de confirmación.
  */
 @Composable
 fun ConfirmationCompose(employee: EmployeeResponse, modifier: Modifier) {
 
+    // Nombre completo del usuario
     val userName = "${employee.name} ${employee.surname}"
+
+    // Tarjeta principal
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -92,30 +129,32 @@ fun ConfirmationCompose(employee: EmployeeResponse, modifier: Modifier) {
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
+
         Column(
             modifier = Modifier.fillMaxSize().padding(40.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image( //logo del ceed
+
+            // Logo de la empresa
+            Image(
                 painter = painterResource(R.drawable.logo_ceedcv),
                 contentDescription = "Logo CEEDCV",
                 modifier = Modifier.size(200.dp)
             )
 
             Spacer(modifier = Modifier.height(10.dp))
-            //imagen circular
+
+            // Imagen circular del usuario
             CircleImage(userName, employee.imageUrl)
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Mostramos el texto de éxito con el nombre real
+            // Texto con información del fichaje
             InformationalText(userName, employee.isSigned)
-
         }
     }
 }
-
 /**
  * Componente para mostrar la imagen del usuario en formato circular.
  */
