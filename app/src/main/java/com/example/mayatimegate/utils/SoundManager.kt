@@ -25,7 +25,7 @@ class SoundManager(context: Context) {
 
         soundMap["success-in"] = soundPool.load(context, R.raw.success3, 1)
         soundMap["success-out"] = soundPool.load(context, R.raw.exit, 1)
-        soundMap["error"] = soundPool.load(context, R.raw.error3prueba, 1)
+        soundMap["error"] = soundPool.load(context, R.raw.error3, 1)
 
 
     }
