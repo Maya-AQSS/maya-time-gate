@@ -6,47 +6,54 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.mayatimegate.data.EmployeeRepository
 import com.example.mayatimegate.ui.theme.MayaTimeGateTheme
 import com.example.mayatimegate.viewmodel.EmployeeViewModel
 import com.example.mayatimegate.data.SettingsManager
+import com.example.mayatimegate.viewmodel.EmployeeViewModelFactory
 import com.example.mayatimegate.viewmodel.SettingsViewModel
-
-
+import com.example.mayatimegate.viewmodel.SettingsViewModelFactory
 
 class MainActivity : ComponentActivity() {
     private val rfidBuffer = StringBuilder()
-    // El estado que la UI va a observar
     private var RFIDCode = mutableStateOf("")
-
     private lateinit var navController: NavHostController
 
-    private val employeeViewModel: EmployeeViewModel by viewModels()
-
-
+    // Usamos by viewModels con un delegado que inicializa la Factory.
+    private val employeeViewModel: EmployeeViewModel by viewModels {
+        EmployeeViewModelFactory(SettingsManager(this))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge() // Habilita el diseño de borde a borde (detrás de las barras de sistema)
+        enableEdgeToEdge()
 
+        //Inicializamos el SettingsManager
         val settingsManager = SettingsManager(this)
-        val settingsViewModel = SettingsViewModel(settingsManager)
 
         setContent {
+            //Obtenemos el SettingsViewModel usando su Factory específica
+            val settingsViewModel: SettingsViewModel = viewModel(
+                factory = SettingsViewModelFactory(application, settingsManager)
+            )
+
             MayaTimeGateTheme {
-                // Controlador central para gestionar el historial y cambio de pantallas
                 navController = rememberNavController()
 
-                // Definición del grafo de navegación de la aplicación
                 NavHost(
                     navController = navController,
                     startDestination = "login"
                 ) {
 
+                    //Navegacion a las demas vistas
                     composable("login") {
                         LoginView(
                             onManualClick = {
@@ -60,16 +67,13 @@ class MainActivity : ComponentActivity() {
                                     launchSingleTop = true
                                     restoreState = true
                                 }
-                            },
-
+                            }
                         )
                     }
 
                     composable("manual_id") {
                         ManualIdentificationView(
-                            onTimeOver = {
-                                navController.popBackStack()
-                            },
+                            onTimeOver = { navController.popBackStack() },
                             navController = navController,
                             viewModel = employeeViewModel
                         )
@@ -78,12 +82,10 @@ class MainActivity : ComponentActivity() {
                     composable("confirmation") {
                         ConfirmationView(
                             onTimeOver = {
-                                // Redirección automática al inicio limpiando el historial previo
                                 navController.navigate("login") {
                                     popUpTo("login") { inclusive = true }
                                     launchSingleTop = true
                                 }
-
                             },
                             viewModel = employeeViewModel,
                             navController = navController
@@ -103,7 +105,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    composable("connection_error"){
+                    composable("connection_error") {
                         ConnectionErrorView(
                             onTimeOver = {
                                 navController.navigate("login") {
@@ -117,9 +119,7 @@ class MainActivity : ComponentActivity() {
 
                     composable("configuration") {
                         ConfigurationView(
-                            onTimeOver = {
-                                navController.popBackStack()
-                            },
+                            onTimeOver = { navController.popBackStack() },
                             navController = navController,
                             viewModel = settingsViewModel
                         )
@@ -128,13 +128,11 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    /**
-     * Interceptamos el teclado externo (lector RFID)
-     */
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         val char = event.unicodeChar.toChar()
 
-        when (keyCode) { //Detectamos que entran caracteres
+        when (keyCode) {
             KeyEvent.KEYCODE_ENTER -> {
                 val code = rfidBuffer.toString().trim()
                 if (code.isNotEmpty()) {
@@ -145,7 +143,6 @@ class MainActivity : ComponentActivity() {
                 return true
             }
             else -> {
-                // Verificamos si el caracter es válido (letra o número)
                 if (char.isLetterOrDigit()) {
                     rfidBuffer.append(char)
                     return true
@@ -155,17 +152,14 @@ class MainActivity : ComponentActivity() {
         return super.onKeyDown(keyCode, event)
     }
 
-    private fun signingProcess(id: String) { //Funcion que procesa el codigo
+    private fun signingProcess(id: String) {
         runOnUiThread {
-
-            // Verificamos que estemos en la pantalla de login
+            // Solo procesamos si estamos en la pantalla de login para evitar saltos inesperados
             if (navController.currentDestination?.route == "login") {
-                //navegamos a la pantalla de confirmacion
                 employeeViewModel.searchByRfid(id)
-                    navController.navigate("confirmation") {
-                        launchSingleTop = true
-                    }
-
+                navController.navigate("confirmation") {
+                    launchSingleTop = true
+                }
             }
         }
     }

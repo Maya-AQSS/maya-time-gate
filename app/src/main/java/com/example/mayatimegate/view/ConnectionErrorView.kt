@@ -17,24 +17,32 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.mayatimegate.R
+import com.example.mayatimegate.utils.SoundManager
 import kotlinx.coroutines.delay
 
 @Composable
 fun ConnectionErrorView(
     onTimeOver: () -> Unit,
     navController: NavHostController,
+    soundManager: SoundManager,
 ) {
-
+    // Obtenemos el contexto de Android (necesario para SoundPool)
+    //val context = LocalContext.current
+    //val soundManager = remember { SoundManager(context) }
     // Temporizador de visualizacion
     LaunchedEffect(Unit) {
-        delay(2000)
+        delay(200)
+        soundManager.play("error")
+        delay(4000)
         onTimeOver()
     }
 
@@ -122,5 +130,11 @@ fun ConnectionErrorText(){
         text = "Error con la conexión al servidor",
         color = Color(0xFFDD4150),
         style = MaterialTheme.typography.displaySmall
+    )
+    Spacer(Modifier.size(16.dp))
+    Text(
+        text = "Comprueba la conexión a Intenet o la URL del servidor",
+        color = Color(0xFFDD4150),
+        style = MaterialTheme.typography.titleMedium
     )
 }
