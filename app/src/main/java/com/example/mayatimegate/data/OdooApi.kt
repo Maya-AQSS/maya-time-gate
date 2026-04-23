@@ -1,5 +1,6 @@
 package com.example.mayatimegate.data
 
+import com.example.mayatimegate.model.CheckDoubleSigning
 import com.example.mayatimegate.model.EmployeeResponse
 import com.example.mayatimegate.model.OdooRequest
 import retrofit2.Call
@@ -22,4 +23,9 @@ interface OdooApi{ // interface con metodo que busca al empleado por su rfid
     suspend fun logAttendance(
         @Body request: OdooRequest
     )
+
+    @GET("api/buscar_fichaje/{id}")
+    fun checkDoubleSigning(
+        @Path("id") id: Int
+    ): Call<CheckDoubleSigning>
 }
