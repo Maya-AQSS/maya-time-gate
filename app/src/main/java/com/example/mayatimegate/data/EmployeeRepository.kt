@@ -1,5 +1,6 @@
 package com.example.mayatimegate.data
 
+import com.example.mayatimegate.model.CheckDoubleSigning
 import com.example.mayatimegate.model.EmployeeResponse
 import retrofit2.Call
 
@@ -15,5 +16,10 @@ class EmployeeRepository {//Repositorio que implementa las demas clases para rea
     fun searchEmployeeByDni(dni: String, baseUrl: String): Call<EmployeeResponse> {
         val api = RetrofitClient.getOdooApi(baseUrl)
         return api.getEmployeeByDni(dni)
+    }
+
+    fun checkDoubleSigning(id: Int, baseUrl: String): Call<CheckDoubleSigning>{
+        val api = RetrofitClient.getOdooApi(baseUrl)
+        return api.checkDoubleSigning(id)
     }
 }

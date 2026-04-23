@@ -1,11 +1,13 @@
 package com.example.mayatimegate.viewmodel
 
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.lifecycle.*
 import com.example.mayatimegate.data.EmployeeRepository
 import com.example.mayatimegate.data.RetrofitClient
 import com.example.mayatimegate.data.SettingsManager
 import com.example.mayatimegate.model.AttendanceParams
+import com.example.mayatimegate.model.CheckDoubleSigning
 import com.example.mayatimegate.model.EmployeeResponse
 import com.example.mayatimegate.model.OdooRequest
 import kotlinx.coroutines.flow.first
@@ -22,6 +24,8 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     //Variables
     private val repository = EmployeeRepository()
     val employeeInfo = MutableLiveData<EmployeeResponse?>()
+
+    var doubleSignInfo = MutableLiveData<CheckDoubleSigning?>()
     val errorMessage = MutableLiveData<String?>()
 
     //HashMap para guardar la informacion de los empleados dependiendo de su identificador de fihcajes
@@ -36,12 +40,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
             if (!isValidBaseUrl(currentUrl)) {
                 employeeInfo.value = EmployeeResponse(
                     status = "error",
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
+                    null,null,null,null,null,null,
                     message = "connection-error"
                 )
                 errorMessage.value = "URL inválida. Revise la configuración"
@@ -70,9 +69,15 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
 
                                 val employeeId = employeeInfo.value?.odooId
                                 val employeeState = employeeInfo.value?.isSigned
-                                // Se guarda la informacion de fichaje en odoo
-                                logSigning(employeeId, employeeState, currentUrl)
-                                errorMessage.value = null
+                                checkDoubleSigning(employeeId!!) { result ->
+
+                                    if (result?.status == "success") {
+
+                                        logSigning(employeeId, employeeState)
+                                        errorMessage.value = null
+                                        doubleSignInfo.value = result
+                                    }
+                                }
                             } else {
                                 errorMessage.value =
                                     serverResponse?.message ?: "Empleado no encontrado"
@@ -86,12 +91,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     override fun onFailure(call: Call<EmployeeResponse>, t: Throwable) {
                         employeeInfo.value = EmployeeResponse(
                             status = "error",
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
+                            null,null,null,null,null,null,
                             message = "connection-error"
                         )
                         errorMessage.value = "Fallo en red: ${t.message}"
@@ -102,14 +102,19 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                 employeeInfo.value = employee //se le da valor al objeto empleado
                 val employeeId = employeeInfo.value?.odooId
                 val employeeState = employeeInfo.value?.isSigned
-                // Se guarda el fichaje en odoo
-                logSigning(employeeId, employeeState, currentUrl)
-                errorMessage.value = null
+                checkDoubleSigning(employeeId!!) { result ->
+                    if (result?.status == "success") {
+                        logSigning(employeeId, employeeState)
+                        errorMessage.value = null
+                        doubleSignInfo.value = result
+                    }
+                }
             }
         }
     }
 
     fun searchByDni(stringDni: String) { //Funcion para buscar empleado por dni
+
         viewModelScope.launch {
 
             val currentUrl = settingsManager.formattedUrl.first()
@@ -117,12 +122,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
             if (!isValidBaseUrl(currentUrl)) {
                 employeeInfo.value = EmployeeResponse(
                     status = "error",
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
+                    null,null,null,null,null,null,
                     message = "connection-error"
                 )
                 errorMessage.value = "URL inválida. Revise la configuración"
@@ -152,14 +152,21 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                                 employeeInfo.value = serverResponse
 
                                 if (serverResponse != null && serverResponse.status == "success") {
+
                                     saveEmployee(employeeInfo.value)
                                     employeeInfo.value?.changeSignedState()
 
                                     val employeeId = employeeInfo.value?.odooId
                                     val employeeState = employeeInfo.value?.isSigned
-                                    // Guarda la info del fichaje en odoo
-                                    logSigning(employeeId, employeeState, currentUrl )
-                                    errorMessage.value = null
+                                    checkDoubleSigning(employeeId!!) { result ->
+
+                                        if (result?.status == "success") {
+
+                                            logSigning(employeeId, employeeState)
+                                            errorMessage.value = null
+                                            doubleSignInfo.value = result
+                                        }
+                                    }
                                 } else {
                                     errorMessage.value =
                                         serverResponse?.message ?: "Empleado no encontrado"
@@ -174,12 +181,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                         override fun onFailure(call: Call<EmployeeResponse>, t: Throwable) {
                             employeeInfo.value = EmployeeResponse(
                                 status = "error",
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
+                                null,null,null,null,null,null,
                                 message = "connection-error"
                             )
                             errorMessage.value = "Fallo en red: ${t.message}"
@@ -190,9 +192,13 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     employeeInfo.value = employee
                     val employeeId = employeeInfo.value?.odooId
                     val employeeState = employeeInfo.value?.isSigned
-                    // Llama a la funcion para guardar el fichaje en odoo
-                    logSigning(employeeId, employeeState, currentUrl)
-                    errorMessage.value = null
+                    checkDoubleSigning(employeeId!!) { result ->
+                        if (result?.status == "success") {
+                            logSigning(employeeId, employeeState)
+                            errorMessage.value = null
+                            doubleSignInfo.value = result
+                        }
+                    }
                 }
 
 
@@ -212,6 +218,35 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
 
     }
 
+    fun checkDoubleSigning(id: Int, onResult: (CheckDoubleSigning?) -> Unit) {
+
+        viewModelScope.launch {
+
+            val currentUrl = settingsManager.formattedUrl.first()
+
+            if (!isValidBaseUrl(currentUrl)) {
+                errorMessage.value = "URL inválida"
+                onResult(null)
+                return@launch
+            }
+
+            repository.checkDoubleSigning(id, currentUrl)
+                .enqueue(object : Callback<CheckDoubleSigning> {
+
+                    override fun onResponse(
+                        call: Call<CheckDoubleSigning>,
+                        response: Response<CheckDoubleSigning>
+                    ) {
+                        onResult(response.body())
+                    }
+
+                    override fun onFailure(call: Call<CheckDoubleSigning>, t: Throwable) {
+                        errorMessage.value = "Error de red: ${t.message}"
+                        onResult(null)
+                    }
+                })
+        }
+    }
     //Funcion para guardar en un hashmap la informacion de los empleados
     fun saveEmployee(employee: EmployeeResponse?){
         val rfid = employee?.rfid
@@ -267,8 +302,10 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     }
 
     //Funcion para enviar datos a la api que registrara los fichajes de los empleados
-    fun logSigning(employeeId: Int?, state: Boolean?, urlServidor: String) {
+    fun logSigning(employeeId: Int?, state: Boolean?) {
         viewModelScope.launch {
+            val currentUrl = settingsManager.formattedUrl.first()
+
             //Comprueba que el id y el estado del empleado no sean nulos
             if (employeeId == null || state == null) {
                 return@launch
@@ -288,7 +325,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
 
             try {
                 //Llamada a la api para enviarle los datos del empleado
-                RetrofitClient.getOdooApi(urlServidor).logAttendance(request)
+                RetrofitClient.getOdooApi(currentUrl).logAttendance(request)
             } catch (e: Exception) {
                 println("Error al guardar los datos en attendance: ${e.message}")
 

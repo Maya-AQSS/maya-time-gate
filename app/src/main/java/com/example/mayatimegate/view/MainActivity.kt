@@ -7,6 +7,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -29,6 +31,7 @@ class MainActivity : ComponentActivity() {
     private val employeeViewModel: EmployeeViewModel by viewModels {
         EmployeeViewModelFactory(SettingsManager(this))
     }
+
     //val context = LocalContext.current
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -168,3 +171,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+
+

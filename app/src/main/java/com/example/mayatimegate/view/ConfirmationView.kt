@@ -27,7 +27,7 @@ import java.time.format.DateTimeFormatter
 import coil.compose.AsyncImage
 import com.example.mayatimegate.model.EmployeeResponse
 import com.example.mayatimegate.viewmodel.EmployeeViewModel
-import androidx.compose.ui.platform.LocalContext
+import com.example.mayatimegate.model.CheckDoubleSigning
 import com.example.mayatimegate.utils.SoundManager
 
 /**
@@ -49,10 +49,8 @@ fun ConfirmationView(
     // Obtenemos el contexto de Android (necesario para SoundPool)
     //val context = LocalContext.current
 
-    // Creamos el SoundManager UNA sola vez (gracias a remember)
-    //val soundManager = remember { SoundManager(context) }
+    val signedState by viewModel.doubleSignInfo.observeAsState()
 
-    // Este bloque se ejecuta cuando cambia el estado (success / error)
     LaunchedEffect(employee?.status) {
 
         println("DEBUG: El estado del empleado es: $employee")
@@ -75,6 +73,9 @@ fun ConfirmationView(
 
                     // Avisamos al padre para cambiar de pantalla
                     onTimeOver()
+                    // Reseteamos el estado en el ViewModel para evitar repeticiones
+                    viewModel.resetData()
+                    //viewModel.resetSigning()
                 }
 
                 "error" -> {
@@ -88,8 +89,6 @@ fun ConfirmationView(
                 }
             }
 
-            // Reseteamos el estado en el ViewModel para evitar repeticiones
-            viewModel.resetData()
         }
     }
 
@@ -103,7 +102,8 @@ fun ConfirmationView(
 
             ConfirmationCompose(
                 employee = employee!!,
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(innerPadding),
+                signedState!!
             )
 
         } else {
@@ -116,7 +116,11 @@ fun ConfirmationView(
  * Maquetación de la tarjeta de confirmación.
  */
 @Composable
-fun ConfirmationCompose(employee: EmployeeResponse, modifier: Modifier) {
+fun ConfirmationCompose(
+    employee: EmployeeResponse,
+    modifier: Modifier,
+    signing: CheckDoubleSigning
+) {
 
     // Nombre completo del usuario
     val userName = "${employee.name} ${employee.surname}"
@@ -152,6 +156,8 @@ fun ConfirmationCompose(employee: EmployeeResponse, modifier: Modifier) {
 
             // Texto con información del fichaje
             InformationalText(userName, employee.isSigned)
+
+            Text("${signing.doubleSigning}")
         }
     }
 }
@@ -282,4 +288,3 @@ fun LoadingCompose(){ //Vista mientras se cargan los datos
         CircularProgressIndicator()//Circulo de progreso
     }
 }
-
