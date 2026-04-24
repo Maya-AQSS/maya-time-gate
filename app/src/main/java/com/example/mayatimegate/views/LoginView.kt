@@ -129,7 +129,7 @@ fun CardOption() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(vertical = 16.dp, horizontal = 8.dp),
         border = BorderStroke(2.dp, Color(0xFFE1E5E8)),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF6F7F8)),
     ) {
