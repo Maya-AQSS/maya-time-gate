@@ -1,5 +1,6 @@
 package com.example.mayatimegate.view
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.mayatimegate.R
 import kotlinx.coroutines.delay
@@ -29,6 +31,7 @@ import com.example.mayatimegate.model.EmployeeResponse
 import com.example.mayatimegate.viewmodel.EmployeeViewModel
 import com.example.mayatimegate.model.CheckDoubleSigning
 import com.example.mayatimegate.utils.SoundManager
+import kotlin.time.Duration
 
 /**
  * Vista de Éxito: Se muestra tras una identificación correcta.
@@ -42,50 +45,50 @@ fun ConfirmationView(
     navController: NavHostController,
     soundManager: SoundManager
 ) {
-
+    val timeout=3000L
     // Observamos el estado del empleado desde el ViewModel
     val employee by viewModel.employeeInfo.observeAsState()
 
-    // Obtenemos el contexto de Android (necesario para SoundPool)
-    //val context = LocalContext.current
 
-    val signedState by viewModel.doubleSignInfo.observeAsState()
-
-    LaunchedEffect(employee?.status) {
-
-        println("DEBUG: El estado del empleado es: $employee")
+    LaunchedEffect(employee) {
 
         // Solo actuamos si hay datos
         if (employee != null) {
+            when (employee?.status) { //Condicion que gestiona las pantallas segun el estado del fichaje
 
-            when (employee?.status) {
-
-                "success" -> {
-                    // Reproducimos sonido dependiendo si entra o sale
-                    if (employee!!.isSigned) {
-                        soundManager.play("success-in")
-                    } else {
-                        soundManager.play("success-out")
+                "success" -> { //si el estado del fichaje es satisfactorio
+                    if(!employee!!.isDoubleSigned){ // Si el empleado no ha fichado doble
+                        viewModel.latestSuccessfulSigning = employee!!.isSigned
+                        // Reproducimos sonido dependiendo si entra o sale
+                        if (employee!!.isSigned) {
+                            soundManager.play("success-in")
+                        } else {
+                            soundManager.play("success-out")
+                        }
+                    }else{ //si ha fichado doble se le manda a la pantalla de aviso de doble fichaje
+                        navController.navigate("double_signing_error")
                     }
 
                     // Esperamos 2 segundos antes de salir de la pantalla
-                    delay(3000)
+                    delay(timeout)
 
                     // Avisamos al padre para cambiar de pantalla
                     onTimeOver()
                     // Reseteamos el estado en el ViewModel para evitar repeticiones
-                    viewModel.resetData()
-                    //viewModel.resetSigning()
+                    viewModel.resetData() // reseteamos los datos para meter otros nuevos
+
                 }
 
-                "error" -> {
-
-                    // Navegación según tipo de error
+                "error" -> { // si el estado del fichaje es error
+                    // Navegamos segun el tipo de error
                     if (employee!!.message == "connection-error") {
                         navController.navigate("connection_error")
                     } else {
                         navController.navigate("error")
                     }
+                }
+                "loading" -> { //si el estado es de carga no hacemos nada
+
                 }
             }
 
@@ -96,14 +99,12 @@ fun ConfirmationView(
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
-
         // Si hay datos del empleado mostramos la confirmación
-        if (employee?.name != null) {
+        if (employee?.status == "success" && !employee!!.isDoubleSigned){
 
-            ConfirmationCompose(
+            ConfirmationCompose( // Compose principal
                 employee = employee!!,
-                modifier = Modifier.padding(innerPadding),
-                signedState!!
+                modifier = Modifier.padding(innerPadding)
             )
 
         } else {
@@ -119,9 +120,7 @@ fun ConfirmationView(
 fun ConfirmationCompose(
     employee: EmployeeResponse,
     modifier: Modifier,
-    signing: CheckDoubleSigning
 ) {
-
     // Nombre completo del usuario
     val userName = "${employee.name} ${employee.surname}"
 
@@ -157,7 +156,7 @@ fun ConfirmationCompose(
             // Texto con información del fichaje
             InformationalText(userName, employee.isSigned)
 
-            Text("${signing.doubleSigning}")
+            Text("${employee.isDoubleSigned}")
         }
     }
 }
@@ -188,7 +187,7 @@ fun CircleImage(userName: String, url: String?) {
             AsyncImage(
                 model = url,
                 contentDescription = "Foto de perfil",
-                placeholder = painterResource(R.drawable.logo_ceedcv), // Una imagen gris o logo
+                placeholder = painterResource(R.drawable.logo_ceedcv), // logo
                 error = painterResource(R.drawable.ic_error), // Una imagen de aviso
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop

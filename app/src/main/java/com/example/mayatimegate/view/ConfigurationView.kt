@@ -56,12 +56,12 @@ fun ConfigurationView(
     viewModel: SettingsViewModel,
     onTimeOver: () -> Unit
 ) {
-
+    val timeout = 20000L
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
         ConfigurationInactivityTimer(
-            20000,
+            timeout,
             onTimeout = onTimeOver,
             modifier = Modifier.padding(innerPadding),
             onBackClick = {

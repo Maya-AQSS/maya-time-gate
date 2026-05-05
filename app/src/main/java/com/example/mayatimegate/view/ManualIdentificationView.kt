@@ -44,12 +44,13 @@ fun ManualIdentificationView(
     onTimeOver: () -> Unit,
     viewModel: EmployeeViewModel
 ) {
+    val timeout = 8000L
 
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
         InactivityTimer(
-            8000,
+            timeout,
             onTimeout = onTimeOver,
             modifier = Modifier.padding(innerPadding),
             onBackClick = {
