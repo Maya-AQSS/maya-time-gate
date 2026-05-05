@@ -31,14 +31,11 @@ fun ErrorView(
     viewModel: EmployeeViewModel,
     soundManager: SoundManager
 ) {
-    // Obtenemos el contexto de Android (necesario para SoundPool)
-    //val context = LocalContext.current
-    //val soundManager = remember { SoundManager(context) }
-    // Redirige al login tras 4 segundos de inactividad
+    val timeout = 4000L
     LaunchedEffect(Unit) {
         delay(200)
         soundManager.play("error")
-        delay(4000)
+        delay(timeout)
         viewModel.resetData()
         delay(100)
         onTimeOver()
