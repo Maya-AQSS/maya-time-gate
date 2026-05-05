@@ -35,14 +35,12 @@ fun ConnectionErrorView(
     navController: NavHostController,
     soundManager: SoundManager,
 ) {
-    // Obtenemos el contexto de Android (necesario para SoundPool)
-    //val context = LocalContext.current
-    //val soundManager = remember { SoundManager(context) }
+    val timeout = 4000L
     // Temporizador de visualizacion
     LaunchedEffect(Unit) {
         delay(200)
         soundManager.play("error")
-        delay(4000)
+        delay(timeout)
         onTimeOver()
     }
 

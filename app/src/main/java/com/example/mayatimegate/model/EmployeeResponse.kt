@@ -14,7 +14,8 @@ data class EmployeeResponse(
     var rfid: String?,
     val imageUrl:String?,
     val message:String?,
-    var isSigned: Boolean = false
+    var isSigned: Boolean = false,
+    var isDoubleSigned: Boolean = false
 ){
     fun changeSignedState(){
         this.isSigned =  !isSigned
