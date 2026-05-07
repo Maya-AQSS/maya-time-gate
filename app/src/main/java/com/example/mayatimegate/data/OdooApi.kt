@@ -2,6 +2,8 @@ package com.example.mayatimegate.data
 
 import com.example.mayatimegate.model.CheckDoubleSigning
 import com.example.mayatimegate.model.EmployeeResponse
+import com.example.mayatimegate.model.LastSession
+import com.example.mayatimegate.model.LastSigning
 import com.example.mayatimegate.model.OdooRequest
 import retrofit2.Call
 import retrofit2.http.Body
@@ -24,8 +26,18 @@ interface OdooApi{ // interface con metodo que busca al empleado por su rfid
         @Body request: OdooRequest
     )
 
-    @GET("api/buscar_fichaje/{id}")
+    @GET("api/buscar_fichaje/{id}") //Api para comprobar si el fichaje es doble
     fun checkDoubleSigning(
         @Path("id") id: Int
     ): Call<CheckDoubleSigning>
+
+    @GET("api/comprobar_sesion") //Api para comprobar si llega tarde a la ultima sesion
+    fun getLastSession(
+    ): Call<LastSession>
+
+    @GET("api/buscar_estado_fichaje/{id}") // Api para conseguir ultimo fichaje del empleado
+    suspend fun getLastSigning(
+        @Path("id") id: Int
+    ): LastSigning
 }
+

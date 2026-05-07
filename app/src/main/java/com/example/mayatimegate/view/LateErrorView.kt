@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.mayatimegate.R
@@ -40,7 +41,7 @@ import com.example.mayatimegate.viewmodel.EmployeeViewModel
 import kotlinx.coroutines.delay
 
 @Composable
-fun DoubleSigninAlertView(
+fun LateErrorView(
     onTimeOver: () -> Unit,
     navController: NavHostController,
     soundManager: SoundManager,
@@ -60,9 +61,10 @@ fun DoubleSigninAlertView(
     Scaffold(
         containerColor = Color(0xFFEEECEB),
     ) { innerPadding ->
-        DoubleSigninCompose(
+        LateErrorCompose(
 
             modifier = Modifier.padding(innerPadding),
+
             // Navegacion manual
             onBackClick = {
                 navController.navigate("login") { // navega a la pantalla de login
@@ -82,10 +84,10 @@ fun DoubleSigninAlertView(
 }
 
 /**
- * Contenedor principal de la vista de alerta
+ * Contenedor principal de la vista de alerta por llegar tarde
  */
 @Composable
-fun DoubleSigninCompose(modifier: Modifier, onBackClick: () -> Unit, onSigningClick: ()-> Unit){
+fun LateErrorCompose(modifier: Modifier, onBackClick: () -> Unit, onSigningClick: ()-> Unit){
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -109,24 +111,20 @@ fun DoubleSigninCompose(modifier: Modifier, onBackClick: () -> Unit, onSigningCl
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            DoubleSigninText() // Mensaje de error de conecion
+            LateErrorText() // Mensaje de error de conecion
 
-            Spacer(modifier = Modifier.height(60.dp))
-
-            AlertButton(onSigningClick, "Volver a fichar", R.drawable.ic_replay)
             Spacer(modifier = Modifier.height(30.dp))
-            AlertButton(onBackClick, "Cancelar", R.drawable.ic_cancel)
-
+            LateErrorButton(onBackClick, "Volver", R.drawable.ic_replay)
         }
     }
 }
 
 /**
- * Boton reciclable
+ * Boton para volver atras
  */
 
 @Composable
-fun AlertButton(onClick: () -> Unit, text: String, icon: Int) {
+fun LateErrorButton(onClick: () -> Unit, text: String, icon: Int) {
     // Botón de acción para reintentar el proceso manualmente
     OutlinedButton(
         onClick = onClick,
@@ -155,7 +153,7 @@ fun AlertButton(onClick: () -> Unit, text: String, icon: Int) {
  * Contenedor con el mensaje de alerta
  */
 @Composable
-fun DoubleSigninText() {
+fun LateErrorText() {
     // Usamos un contenedor para darle dinamismo al icono
     Box(
         contentAlignment = Alignment.Center,
@@ -169,8 +167,8 @@ fun DoubleSigninText() {
         ) {}
 
         Image(
-            painter = painterResource(R.drawable.outline_timer_24),
-            contentDescription = "Icono Doble Fichaje",
+            painter = painterResource(R.drawable.ic_schedule),
+            contentDescription = "Icono vista tarde",
             modifier = Modifier.size(140.dp),
             // Si el recurso es un vector, puedes tintarlo dinámicamente
             colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFFF4D03F))
@@ -180,7 +178,7 @@ fun DoubleSigninText() {
     Spacer(Modifier.height(32.dp))
 
     Text(
-        text = "¿Ya pasaron 5 minutos?",
+        text = "La ultima sesion ya ha comenzado",
         color = Color(0xFF2D2D2D), // Texto oscuro para legibilidad
         style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Bold,
@@ -194,7 +192,7 @@ fun DoubleSigninText() {
         shape = RoundedCornerShape(16.dp)
     ) {
         Text(
-            text = "Fichaste hace menos de 5 minutos",
+            text = "Creo que has llegado un poco tarde",
             color = Color(0xFF856404), // Un tono mostaza oscuro para contraste
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             style = MaterialTheme.typography.bodyLarge,
@@ -202,5 +200,4 @@ fun DoubleSigninText() {
         )
     }
 }
-
 

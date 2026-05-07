@@ -133,7 +133,19 @@ class MainActivity : ComponentActivity() {
                             viewModel = employeeViewModel,
                         )
                     }
-
+                    composable("late_error") {
+                        LateErrorView(
+                            onTimeOver = {
+                                navController.navigate("login") {
+                                    popUpTo("login") { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            },
+                            navController = navController,
+                            soundManager = soundManager,
+                            viewModel = employeeViewModel,
+                        )
+                    }
                     composable("configuration") {
                         ConfigurationView(
                             onTimeOver = { navController.popBackStack() },
