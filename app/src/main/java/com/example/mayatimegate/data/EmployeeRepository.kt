@@ -2,6 +2,8 @@ package com.example.mayatimegate.data
 
 import com.example.mayatimegate.model.CheckDoubleSigning
 import com.example.mayatimegate.model.EmployeeResponse
+import com.example.mayatimegate.model.LastSession
+import com.example.mayatimegate.model.LastSigning
 import retrofit2.Call
 
 class EmployeeRepository {//Repositorio que implementa las demas clases para realizar la busqueda
@@ -21,5 +23,15 @@ class EmployeeRepository {//Repositorio que implementa las demas clases para rea
     fun checkDoubleSigning(id: Int, baseUrl: String): Call<CheckDoubleSigning>{
         val api = RetrofitClient.getOdooApi(baseUrl)
         return api.checkDoubleSigning(id)
+    }
+
+    fun searchLastSession(baseUrl:String): Call<LastSession>{
+        val api = RetrofitClient.getOdooApi(baseUrl)
+        return api.getLastSession()
+    }
+
+    suspend fun searchLastSigning(id: Int, baseUrl: String): LastSigning {
+        val api = RetrofitClient.getOdooApi(baseUrl)
+        return api.getLastSigning(id)
     }
 }

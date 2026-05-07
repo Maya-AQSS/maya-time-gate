@@ -11,7 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,51 +50,57 @@ fun ConfirmationView(
     val timeout=3000L
     // Observamos el estado del empleado desde el ViewModel
     val employee by viewModel.employeeInfo.observeAsState()
-
-
+    var handled by remember { mutableStateOf(false) }
+    val currentEmployee = employee
     LaunchedEffect(employee) {
 
-        // Solo actuamos si hay datos
-        if (employee != null) {
-            when (employee?.status) { //Condicion que gestiona las pantallas segun el estado del fichaje
+        val emp = currentEmployee ?: return@LaunchedEffect
+        Log.d("Empleado", "Empleado: $currentEmployee")
 
-                "success" -> { //si el estado del fichaje es satisfactorio
-                    if(!employee!!.isDoubleSigned){ // Si el empleado no ha fichado doble
-                        viewModel.latestSuccessfulSigning = employee!!.isSigned
-                        // Reproducimos sonido dependiendo si entra o sale
-                        if (employee!!.isSigned) {
-                            soundManager.play("success-in")
-                        } else {
-                            soundManager.play("success-out")
-                        }
-                    }else{ //si ha fichado doble se le manda a la pantalla de aviso de doble fichaje
-                        navController.navigate("double_signing_error")
-                    }
+        when (currentEmployee.status) {
 
-                    // Esperamos 2 segundos antes de salir de la pantalla
-                    delay(timeout)
+            "success" -> {
 
-                    // Avisamos al padre para cambiar de pantalla
-                    onTimeOver()
-                    // Reseteamos el estado en el ViewModel para evitar repeticiones
-                    viewModel.resetData() // reseteamos los datos para meter otros nuevos
+                handled = true
 
-                }
+                if (emp.isLate == true) {
+                    navController.navigate("late_error")
+                } else if (emp.isDoubleSigned == false && emp.isLate == false) {
 
-                "error" -> { // si el estado del fichaje es error
-                    // Navegamos segun el tipo de error
-                    if (employee!!.message == "connection-error") {
-                        navController.navigate("connection_error")
+                    viewModel.latestSuccessfulSigning = emp.isSigned
+
+                    if (emp.isSigned) {
+                        soundManager.play("success-in")
                     } else {
-                        navController.navigate("error")
+                        soundManager.play("success-out")
                     }
-                }
-                "loading" -> { //si el estado es de carga no hacemos nada
 
+                } else {
+                    navController.navigate("double_signing_error")
+                }
+
+                delay(timeout)
+
+                onTimeOver()
+                viewModel.resetData()
+            }
+
+            "error" -> {
+
+                handled = true
+
+                if (emp.message == "connection-error") {
+                    navController.navigate("connection_error")
+                } else {
+                    navController.navigate("error")
                 }
             }
 
+            "loading" -> Unit
         }
+    }
+    LaunchedEffect(Unit) {
+        handled = false
     }
 
     // UI de la pantalla
@@ -100,13 +108,11 @@ fun ConfirmationView(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
         // Si hay datos del empleado mostramos la confirmación
-        if (employee?.status == "success" && !employee!!.isDoubleSigned){
-
+        if (employee?.status == "success" && employee?.isDoubleSigned == false && employee?.isLate == false){
             ConfirmationCompose( // Compose principal
                 employee = employee!!,
                 modifier = Modifier.padding(innerPadding)
             )
-
         } else {
             // Si no hay datos mostramos loading
             LoadingCompose()
@@ -155,8 +161,6 @@ fun ConfirmationCompose(
 
             // Texto con información del fichaje
             InformationalText(userName, employee.isSigned)
-
-            Text("${employee.isDoubleSigned}")
         }
     }
 }
