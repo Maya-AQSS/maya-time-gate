@@ -1,6 +1,7 @@
 package com.example.mayatimegate.model
 
 import com.google.gson.annotations.SerializedName
+import java.sql.Time
 
 // Lo que enviamos (Request)
 data class OdooRequest( //Estructura del json
@@ -15,7 +16,8 @@ data class AttendanceParams( //contenido del empleado en el json
     val location_id: Int
 )
 
-data class CheckDoubleSigning(
+
+data class CheckDoubleSigning( // respuesta de la api para comprobar si el fichaje es doble
     val status: String,
     @SerializedName("id_odoo")
     val employee_id: Int,
@@ -23,3 +25,15 @@ data class CheckDoubleSigning(
     val doubleSigning: Boolean
 )
 
+data class LastSession( // respuesta de la api para comprobar si llega tarde a la ultima sesion
+    val status: String,
+    @SerializedName("fichaje_tarde")
+    val isLate :Boolean,
+)
+
+
+data class LastSigning(
+    val status: String,
+    @SerializedName("tipo_fichaje")
+    val type: Boolean
+)

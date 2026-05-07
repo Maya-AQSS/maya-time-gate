@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.collection.doubleListOf
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.core.app.NotificationCompat
 import androidx.lifecycle.*
 import com.example.mayatimegate.data.EmployeeRepository
 import com.example.mayatimegate.data.RetrofitClient
@@ -11,6 +12,8 @@ import com.example.mayatimegate.data.SettingsManager
 import com.example.mayatimegate.model.AttendanceParams
 import com.example.mayatimegate.model.CheckDoubleSigning
 import com.example.mayatimegate.model.EmployeeResponse
+import com.example.mayatimegate.model.LastSession
+import com.example.mayatimegate.model.LastSigning
 import com.example.mayatimegate.model.OdooRequest
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -28,8 +31,8 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     //Variables
     private val repository = EmployeeRepository()
     val employeeInfo = MutableLiveData<EmployeeResponse?>()
-
     var doubleSignInfo = MutableLiveData<CheckDoubleSigning?>()
+    val lastSessionInfo = MutableLiveData<LastSession?>()
     val errorMessage = MutableLiveData<String?>()
 
     //HashMap para guardar la informacion de los empleados dependiendo de su identificador de fihcajes
@@ -37,7 +40,6 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     private val hashMapDni: HashMap<String, EmployeeResponse> = hashMapOf()
 
     private val _confirmSigning = MutableSharedFlow<EmployeeResponse>()
-
     var latestSuccessfulSigning: Boolean? = null
 
     fun searchByRfid(rfid: String) { //Funcion para buscar empleado por RFID
@@ -65,7 +67,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
 
             if(cachedEmployee != null) { //Si no se encuentra el empleado en memoria
                 cachedEmployee.changeSignedState()
-                handleEmployeeFlow(cachedEmployee)
+                handleEmployeeFlow(cachedEmployee, currentUrl)
             }else{
 
                 //Llamada al repositorio para buscar al empleado
@@ -98,7 +100,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                         serverResponse.rfid = rfid//se guarda el codigo rfid
                         serverResponse.changeSignedState() //se cambia el estado
                         saveEmployee(serverResponse) //se guarda el empleado
-                        handleEmployeeFlow(serverResponse) //se procede al flujo de fichaje
+                        handleEmployeeFlow(serverResponse, currentUrl) //se procede al flujo de fichaje
 
 
                     }
@@ -151,9 +153,10 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
 
             //se busca si el empleado exite en memoria
             val cachedEmployee = getEmployeeFromHashMap(officialDni)
+            Log.d("Empleado","Empleado en memoria: $cachedEmployee")
             if (cachedEmployee != null) { //si no es nulo es que existe en memoria
-                cachedEmployee.changeSignedState()  //se cambia el estado del empleado
-                handleEmployeeFlow(cachedEmployee) // y se procesa al empleado para fichar
+                cachedEmployee.changeSignedState()
+                handleEmployeeFlow(cachedEmployee, currentUrl) // y se procesa al empleado para fichar
             } else { //si no esta en memoria se busca en la api
                 val call = repository.searchEmployeeByDni(officialDni, currentUrl) //se devuelve informacionde la api
 
@@ -181,7 +184,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                         }
                         serverResponse.changeSignedState()
                         saveEmployee(serverResponse) // se guarda el empleado en memoria
-                        handleEmployeeFlow(serverResponse) // y se procesa para fichar
+                        handleEmployeeFlow(serverResponse, currentUrl) // y se procesa para fichar
 
                     }
 
@@ -199,92 +202,119 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     }
 
     // Funcion que optimiza el flujo de fichaje
-    private fun handleEmployeeFlow(employee: EmployeeResponse) {
+    private fun handleEmployeeFlow(employee: EmployeeResponse, currentUrl: String) {
 
         val employeeId = employee.odooId
         if (employeeId == null) {
             errorMessage.value = "Empleado sin ID válido"
             return
         }
+
         val newSignedState = employee.isSigned
 
-        checkDoubleSigning(employeeId) { result -> // funcion lambda que calcula el doble fichaje
-            // devuelve el resultado del doble fichaje
-            if (result == null) { //si el resultado es nulo devuelve error
-                errorMessage.value = "Error comprobando fichaje doble"
-                return@checkDoubleSigning
+        // llamada a la primera funcion lambda para saber si se ficha tarde
+        searchLastSession(currentUrl) { sessionResult ->
+
+            if (sessionResult == null || sessionResult.status != "success") {
+                errorMessage.value = "Error comprobando ultima sesion"
+                return@searchLastSession
             }
 
-            if (result.status != "success") { //Si el resultado no es satisfactorio se devuelve error
-                errorMessage.value = "Error en validación de fichaje"
-                return@checkDoubleSigning
+            lastSessionInfo.value = sessionResult
+
+            // Si llega tarde, cortamos aquí
+            if (sessionResult.isLate) {
+                val updatedEmployee = employee.copy(
+                    isSigned = newSignedState,
+                    isLate = true
+                )
+                employeeInfo.value = updatedEmployee
+                return@searchLastSession
             }
 
-            // Crear objeto consistente antes de emitir
-            val updatedEmployee = employee.copy(
-                isSigned = newSignedState,
-                isDoubleSigned = result.doubleSigning
-            )
+            // llamada a la segunda funcion lambda para comprobar si el fichaje es doble
+            checkDoubleSigning(employeeId, currentUrl) { doubleResult ->
 
-            doubleSignInfo.value = result // se establece la variable que guarda si ha habido doble fichaje
+                if (doubleResult == null) {
+                    errorMessage.value = "Error comprobando fichaje doble"
+                    return@checkDoubleSigning
+                }
 
-            employeeInfo.value = updatedEmployee // se actualiza el empleado
-            errorMessage.value = null
+                if (doubleResult.status != "success") {
+                    errorMessage.value = "Error en validación de fichaje"
+                    return@checkDoubleSigning
+                }
 
-            if (!result.doubleSigning) {
-                logSigning()
-                saveEmployee(updatedEmployee)
-            } else {
-                viewModelScope.launch {
-                    _confirmSigning.emit(updatedEmployee)
+                //  objeto final consistente
+                val updatedEmployee = employee.copy(
+                    isSigned = newSignedState,
+                    isDoubleSigned = doubleResult.doubleSigning,
+                    isLate = sessionResult.isLate
+                )
+
+                doubleSignInfo.value = doubleResult
+                employeeInfo.value = updatedEmployee
+                errorMessage.value = null
+
+                if (!doubleResult.doubleSigning) {
+                    logSigning()
+                    saveEmployee(updatedEmployee)
+                } else {
+                    viewModelScope.launch {
+                        _confirmSigning.emit(updatedEmployee)
+                    }
                 }
             }
         }
+
+
     }
-    fun onSigningConfirmed() {
+
+    suspend fun getLastSigning(employeeId: Int, currentUrl: String): Boolean? {
+        return try {
+            val response = repository.searchLastSigning(employeeId, currentUrl)
+            response.type
+        } catch (e: Exception) {
+            errorMessage.value = "Error de red: ${e.message}"
+            null
+        }
+    }
+
+    fun onSigningConfirmed() {  //funcion para fichar y cambiar el estado de fichaje
 
         val employee = employeeInfo.value ?: return
+
         val corrected = employee.copy(
-            isDoubleSigned = false
+            isDoubleSigned = false,
+            isSigned = !(latestSuccessfulSigning ?: employee.isSigned)
         )
-        if(latestSuccessfulSigning != null){
-            corrected.isSigned = !latestSuccessfulSigning!!
-        }
+
         employeeInfo.value = corrected
         logSigning()
         saveEmployee(corrected)
     }
 
     //funcion lambda que calcula si el fichaje es doble
-    fun checkDoubleSigning(id: Int, onResult: (CheckDoubleSigning?) -> Unit) {
+    fun checkDoubleSigning(id: Int, currentUrl:String, onResult: (CheckDoubleSigning?) -> Unit) {
 
-        viewModelScope.launch {
-            // se optiene el la URL y se valida que sea correcta
-            val currentUrl = settingsManager.formattedUrl.first()
+        // se llama a la api que calcula si el fichaje ha sido doble
+        repository.checkDoubleSigning(id, currentUrl)
+            .enqueue(object : Callback<CheckDoubleSigning> {
 
-            if (!isValidBaseUrl(currentUrl)) {
-                errorMessage.value = "URL inválida"
-                onResult(null)
-                return@launch
-            }
-            // se llama a la api que calcula si el fichaje ha sido doble
-            repository.checkDoubleSigning(id, currentUrl)
-                .enqueue(object : Callback<CheckDoubleSigning> {
+                override fun onResponse(
+                    call: Call<CheckDoubleSigning>,
+                    response: Response<CheckDoubleSigning>
+                ) {
+                    onResult(response.body()) // se devuelve el resultado
 
-                    override fun onResponse(
-                        call: Call<CheckDoubleSigning>,
-                        response: Response<CheckDoubleSigning>
-                    ) {
-                        onResult(response.body()) // se devuelve el resultado
+                }
+                // si da error se devuelve null
+                override fun onFailure(call: Call<CheckDoubleSigning>, t: Throwable) {
+                    errorMessage.value = "Error de red: ${t.message}"
+                    onResult(null)
+                }
+            })
 
-                    }
-                    // si da error se devuelve null
-                    override fun onFailure(call: Call<CheckDoubleSigning>, t: Throwable) {
-                        errorMessage.value = "Error de red: ${t.message}"
-                        onResult(null)
-                    }
-                })
-        }
     }
     //Funcion para guardar en un hashmap la informacion de los empleados
     fun saveEmployee(employee: EmployeeResponse?){
@@ -310,6 +340,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
         employeeInfo.value = null
         errorMessage.value = null
         doubleSignInfo.value = null
+        lastSessionInfo.value = null
     }
 
     fun calculateLetterOfDni(dni: Long): String { //funcion que calcula la letra del dni
@@ -342,6 +373,28 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
         }
     }
 
+    // funcion lambda para comprobar si se ha fichado tarde
+    fun searchLastSession(currentUrl: String, onResult: (LastSession?) -> Unit){
+        repository.searchLastSession(currentUrl)
+            .enqueue(object : Callback<LastSession>{
+                override fun onResponse(
+                    call: Call<LastSession>,
+                    response: Response<LastSession>
+                ){
+                    // si la respuesta es favorable se devuelve
+                    onResult(response.body())
+                }
+
+                override fun onFailure( // si no se guarda el error
+                    call: Call<LastSession>,
+                    t: Throwable
+                ){
+                    errorMessage.value = "Error de red: ${t.message}"
+                    onResult(null)
+                }
+            })
+    }
+
     //Funcion para enviar datos a la api que registrara los fichajes de los empleados
     fun logSigning() {
         viewModelScope.launch {
@@ -365,7 +418,6 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     location_id = 1
                 )
             )
-
             try {
                 //Llamada a la api para enviarle los datos del empleado
                 RetrofitClient.getOdooApi(currentUrl).logAttendance(request)
@@ -390,210 +442,3 @@ class EmployeeViewModelFactory(private val settingsManager: SettingsManager) : V
         throw IllegalArgumentException("Clase viewModel desconocida")
     }
 }
-
-
-
-
-
-
-
-
-/*
-fun searchByDni(stringDni: String) { //Funcion para buscar empleado por dni
-
-        viewModelScope.launch {
-
-            val currentUrl = settingsManager.formattedUrl.first()
-            //En caso de que la url sea incorrecta, mostramos error
-            if (!isValidBaseUrl(currentUrl)) {
-                employeeInfo.value = EmployeeResponse(
-                    status = "error",
-                    null,null,null,null,null,null,
-                    message = "connection-error"
-                )
-                errorMessage.value = "URL inválida. Revise la configuración"
-                return@launch
-            }
-            val dni = stringDni.toLongOrNull()
-
-            if (dni != null) { // si el dni tiene un tamaño aceptable
-                val letter = calculateLetterOfDni(dni) //calculamos la letra del dni
-                val officialDni = stringDni + letter //concatenamos las letras con el numero
-
-                //Buscamos si tenemos guardado el empleado en el hashmap
-                val cacheEmployee = getEmployeeFromHashMap(officialDni)
-                val employee = cacheEmployee
-                if(employee == null){
-                    //Si no lo tenemos
-                    //buscamos al empleado por el dni
-                    val call = repository.searchEmployeeByDni(officialDni, currentUrl)
-
-                    call.enqueue(object : Callback<EmployeeResponse> {
-
-                        override fun onResponse( //funcion que le da valor al empleado
-                            call: Call<EmployeeResponse>,
-                            response: Response<EmployeeResponse>
-                        ) {
-                            if (response.isSuccessful) {
-                                val serverResponse = response.body()
-                                //
-
-                                if (serverResponse != null && serverResponse.status == "success") {
-                                    serverResponse.changeSignedState()
-                                    employeeInfo.value = serverResponse
-                                    saveEmployee(employeeInfo.value)
-                                    //employeeInfo.value?.changeSignedState()
-
-                                    val employeeId = employeeInfo.value?.odooId
-                                    val employeeState = employeeInfo.value?.isSigned
-                                    checkDoubleSigning(employeeId!!) { result ->
-
-                                        if (result?.status == "success") {
-
-                                            logSigning(employeeId, employeeState)
-                                            errorMessage.value = null
-                                            doubleSignInfo.value = result
-                                            Log.i("PROBLEMA", "Estado 1: "+employeeInfo.value!!.isDoubleSigned)
-                                            Log.i("PROBLEMA", "Fichaje doble "+doubleSignInfo.value)
-                                            employeeInfo.value!!.isDoubleSigned = doubleSignInfo.value!!.doubleSigning
-                                        }
-                                    }
-                                } else {
-                                    errorMessage.value =
-                                        serverResponse?.message ?: "Empleado no encontrado"
-                                }
-
-                            } else {
-                                errorMessage.value =
-                                    "Error en el servidor: ${response.code()}"
-                            }
-                        }
-                        //Funcion que le da valor al empleado en caso de error
-                        override fun onFailure(call: Call<EmployeeResponse>, t: Throwable) {
-                            employeeInfo.value = EmployeeResponse(
-                                status = "error",
-                                null,null,null,null,null,null,
-                                message = "connection-error"
-                            )
-                            errorMessage.value = "Fallo en red: ${t.message}"
-                        }
-                    })
-                }else{
-                    employee.changeSignedState()
-                    employeeInfo.value = employee
-                    val employeeId = employeeInfo.value?.odooId
-                    val employeeState = employeeInfo.value?.isSigned
-                    checkDoubleSigning(employeeId!!) { result ->
-                        if (result?.status == "success") {
-                            logSigning(employeeId, employeeState)
-                            errorMessage.value = null
-                            doubleSignInfo.value = result
-                            Log.i("PROBLEMA", "Estado 2: "+employeeInfo.value!!.isDoubleSigned )
-                            Log.i("PROBLEMA", "Fichaje doble "+doubleSignInfo.value)
-                            employeeInfo.value!!.isDoubleSigned = doubleSignInfo.value!!.doubleSigning
-                            Log.i("PROBLEMA", "Fichaje doble "+doubleSignInfo.value!!.doubleSigning)
-                            val a = doubleSignInfo.value!!.doubleSigning
-                            Log.i("PROBLEMA", "a: $a  ${employeeInfo.value}")
-
-                        }
-                    }
-                }
-
-
-            } else { //si el dni es demasiado largo
-                employeeInfo.value = EmployeeResponse(
-                    status = "error",
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    message = "DNI demasiado largo"
-                )
-            }
-        }
-
-    }
- */
-
-/*
-fun searchByRfid(rfid: String) { //Funcion para buscar empleado por RFID
-        viewModelScope.launch {
-
-            val currentUrl = settingsManager.formattedUrl.first()
-            //Si la url es incorrecta no busca y se indica que hay un error
-            if (!isValidBaseUrl(currentUrl)) {
-                employeeInfo.value = EmployeeResponse(
-                    status = "error",
-                    null,null,null,null,null,null,
-                    message = "connection-error"
-                )
-                errorMessage.value = "URL inválida. Revise la configuración"
-                return@launch
-            }
-
-            val employee = getEmployeeFromHashMap(rfid) //se busca el empleado en el HashMap
-
-            if(employee == null){ //Si no se encuentra el empleado en memoria
-                //Llamada al repositorio para buscar al empleado
-                val call = repository.searchEmployeeByRfid(rfid, currentUrl)
-
-                call.enqueue(object : Callback<EmployeeResponse>{
-
-                    override fun onResponse( //Funcion que da valor al empleado
-                        call: Call<EmployeeResponse>,
-                        response: Response<EmployeeResponse>
-                    ) {
-                        if (response.isSuccessful) {
-                            val serverResponse = response.body()
-                            employeeInfo.value = serverResponse //Se le da valor al objeto
-                            employeeInfo.value?.rfid = rfid  //Como el rfid no esta en el json de la api se le da valor
-                            if (serverResponse != null && serverResponse.status == "success") {
-                                saveEmployee(employeeInfo.value) //se guarda el empleado en memoria
-                                employeeInfo.value?.changeSignedState()
-
-                                val employeeId = employeeInfo.value?.odooId
-                                checkDoubleSigning(employeeId!!) { result ->
-
-                                    if (result?.status == "success") {
-                                        logSigning()
-                                        errorMessage.value = null
-                                        doubleSignInfo.value = result
-                                    }
-                                }
-                            } else {
-                                errorMessage.value =
-                                    serverResponse?.message ?: "Empleado no encontrado"
-                            }
-
-                        } else {
-                            errorMessage.value = "Error en el servidor: ${response.code()}"
-                        }
-                    }
-                    //Funcion en caso de error de conexion
-                    override fun onFailure(call: Call<EmployeeResponse>, t: Throwable) {
-                        employeeInfo.value = EmployeeResponse(
-                            status = "error",
-                            null,null,null,null,null,null,
-                            message = "connection-error"
-                        )
-                        errorMessage.value = "Fallo en red: ${t.message}"
-                    }
-                })
-            }else{ //si el empleado ya existe en memoria
-                employee.changeSignedState()  //se le cambia el estado de fichaje
-                employeeInfo.value = employee //se le da valor al objeto empleado
-                val employeeId = employeeInfo.value?.odooId
-                checkDoubleSigning(employeeId!!) { result ->
-                    if (result?.status == "success") {
-                        logSigning()
-                        errorMessage.value = null
-                        doubleSignInfo.value = result
-                    }
-                }
-            }
-        }
-    }
-
-*/

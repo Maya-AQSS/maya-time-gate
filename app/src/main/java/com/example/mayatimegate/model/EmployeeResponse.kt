@@ -15,7 +15,8 @@ data class EmployeeResponse(
     val imageUrl:String?,
     val message:String?,
     var isSigned: Boolean = false,
-    var isDoubleSigned: Boolean = false
+    var isDoubleSigned: Boolean? = null,
+    var isLate: Boolean? = null
 ){
     fun changeSignedState(){
         this.isSigned =  !isSigned
