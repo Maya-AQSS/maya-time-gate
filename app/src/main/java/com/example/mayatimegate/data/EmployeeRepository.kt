@@ -30,7 +30,7 @@ class EmployeeRepository {//Repositorio que implementa las demas clases para rea
         return api.getLastSession()
     }
 
-    suspend fun searchLastSigning(id: Int, baseUrl: String): LastSigning {
+    fun searchLastSigning(id: Int, baseUrl: String): Call<LastSigning> {
         val api = RetrofitClient.getOdooApi(baseUrl)
         return api.getLastSigning(id)
     }
