@@ -36,8 +36,8 @@ interface OdooApi{ // interface con metodo que busca al empleado por su rfid
     ): Call<LastSession>
 
     @GET("api/buscar_estado_fichaje/{id}") // Api para conseguir ultimo fichaje del empleado
-    suspend fun getLastSigning(
+    fun getLastSigning(
         @Path("id") id: Int
-    ): LastSigning
+    ): Call<LastSigning>
 }
 
