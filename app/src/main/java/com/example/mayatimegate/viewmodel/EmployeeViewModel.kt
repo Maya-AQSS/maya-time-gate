@@ -24,6 +24,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+
 class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los empleados
     private val settingsManager: SettingsManager
 ) : ViewModel() {
@@ -34,6 +35,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     var doubleSignInfo = MutableLiveData<CheckDoubleSigning?>()
     val lastSessionInfo = MutableLiveData<LastSession?>()
     val errorMessage = MutableLiveData<String?>()
+    
 
     //HashMap para guardar la informacion de los empleados dependiendo de su identificador de fihcajes
     private val hashMapRfid: HashMap<String, EmployeeResponse> = hashMapOf()
@@ -41,6 +43,8 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
 
     private val _confirmSigning = MutableSharedFlow<EmployeeResponse>()
     var latestSuccessfulSigning: Boolean? = null
+
+
 
     fun searchByRfid(rfid: String) { //Funcion para buscar empleado por RFID
         employeeInfo.value = EmployeeResponse( //establece un empleado por defecto con un estado de carga
@@ -60,13 +64,13 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     message = "connection-error"
                 )
                 errorMessage.value = "URL inválida. Revise la configuración"
+                Log.d("Empleado", "ERROR: ${errorMessage.value}")
                 return@launch
             }
 
             val cachedEmployee = getEmployeeFromHashMap(rfid) //se busca el empleado en el HashMap
 
             if(cachedEmployee != null) { //Si no se encuentra el empleado en memoria
-                cachedEmployee.changeSignedState()
                 handleEmployeeFlow(cachedEmployee, currentUrl)
             }else{
 
@@ -81,6 +85,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     ) {
                         if (!response.isSuccessful) { //si la respuesta es erronea se guarda el error
                             errorMessage.value = "Error en el servidor: ${response.code()}"
+                            Log.d("Empleado", "ERROR: ${errorMessage.value} (85)")
                             return
                         }
 
@@ -94,11 +99,11 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                                 null, null, null, null, null, null,
                                 message = "error"
                             )
+                            Log.d("Empleado", "ERROR: ${errorMessage.value} (99)")
                             return
                         }
 
                         serverResponse.rfid = rfid//se guarda el codigo rfid
-                        serverResponse.changeSignedState() //se cambia el estado
                         saveEmployee(serverResponse) //se guarda el empleado
                         handleEmployeeFlow(serverResponse, currentUrl) //se procede al flujo de fichaje
 
@@ -112,6 +117,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                             message = "connection-error"
                         )
                         errorMessage.value = "Fallo en red: ${t.message}"
+                        Log.d("Empleado", "ERROR: ${errorMessage.value} (118)")
                     }
                 })
             }
@@ -136,6 +142,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     message = "connection-error"
                 )
                 errorMessage.value = "URL inválida. Revise la configuración"
+                Log.d("Empleado", "ERROR: ${errorMessage.value} (143)")
                 return@launch
             }
 
@@ -147,15 +154,14 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     null, null, null, null, null, null,
                     message = "DNI inválido"
                 )
+                Log.d("Empleado", "ERROR: ${errorMessage.value} (155)")
                 return@launch
             }
             val officialDni = inputDni + calculateLetterOfDni(dniNumber)
 
             //se busca si el empleado exite en memoria
             val cachedEmployee = getEmployeeFromHashMap(officialDni)
-            Log.d("Empleado","Empleado en memoria: $cachedEmployee")
             if (cachedEmployee != null) { //si no es nulo es que existe en memoria
-                cachedEmployee.changeSignedState()
                 handleEmployeeFlow(cachedEmployee, currentUrl) // y se procesa al empleado para fichar
             } else { //si no esta en memoria se busca en la api
                 val call = repository.searchEmployeeByDni(officialDni, currentUrl) //se devuelve informacionde la api
@@ -168,6 +174,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     ) {
                         if (!response.isSuccessful) { // si el estado no es satisfactorio
                             errorMessage.value = "Error en el servidor: ${response.code()}" //se da error
+                            Log.d("Empleado", "ERROR: ${errorMessage.value} (176)")
                             return
                         }
                         val serverResponse = response.body() // si va bien se captura la respuesta
@@ -180,9 +187,9 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                                 null, null, null, null, null, null,
                                 message = "error"
                             )
+                            Log.d("Empleado", "ERROR: ${errorMessage.value} (189)")
                             return
                         }
-                        serverResponse.changeSignedState()
                         saveEmployee(serverResponse) // se guarda el empleado en memoria
                         handleEmployeeFlow(serverResponse, currentUrl) // y se procesa para fichar
 
@@ -195,6 +202,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                             message = "connection-error"
                         )
                         errorMessage.value = "Fallo en red: ${t.message}"
+                        Log.d("Empleado", "ERROR: ${errorMessage.value} (105)")
                     }
                 })
             }
@@ -204,12 +212,30 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     // Funcion que optimiza el flujo de fichaje
     private fun handleEmployeeFlow(employee: EmployeeResponse, currentUrl: String) {
 
+        val employeeId = employee.odooId ?: return
+
+        //funcion lambda para conseguir el ultimo fichaje del empleado
+        getLastSigning(employeeId, currentUrl) { lastResult ->
+
+            if(lastResult != null && lastResult.status == "error"){
+                errorMessage.value = "Error con el estado de fichaje"
+                Log.d("Empleado", "ERROR: ${errorMessage.value} (229)")
+                return@getLastSigning
+            }
+            val last = lastResult?.type ?: false
+            executeSingingLogic(employee, currentUrl, last)
+        }
+
+    }
+
+    //Funcion que ejecuta el flujo del fichaje
+    fun executeSingingLogic(employee: EmployeeResponse, currentUrl: String, lastResult: Boolean?){
         val employeeId = employee.odooId
         if (employeeId == null) {
             errorMessage.value = "Empleado sin ID válido"
+            Log.d("Empleado", "ERROR: ${errorMessage.value} (218)")
             return
         }
-
         val newSignedState = employee.isSigned
 
         // llamada a la primera funcion lambda para saber si se ficha tarde
@@ -217,6 +243,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
 
             if (sessionResult == null || sessionResult.status != "success") {
                 errorMessage.value = "Error comprobando ultima sesion"
+                Log.d("Empleado", "ERROR: ${errorMessage.value} (229)")
                 return@searchLastSession
             }
 
@@ -237,17 +264,19 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
 
                 if (doubleResult == null) {
                     errorMessage.value = "Error comprobando fichaje doble"
+                    Log.d("Empleado", "ERROR: ${errorMessage.value} (250)")
                     return@checkDoubleSigning
                 }
 
                 if (doubleResult.status != "success") {
                     errorMessage.value = "Error en validación de fichaje"
+                    Log.d("Empleado", "ERROR: ${errorMessage.value} (256)")
                     return@checkDoubleSigning
                 }
 
                 //  objeto final consistente
                 val updatedEmployee = employee.copy(
-                    isSigned = newSignedState,
+                    isSigned = !lastResult!!,
                     isDoubleSigned = doubleResult.doubleSigning,
                     isLate = sessionResult.isLate
                 )
@@ -266,18 +295,29 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                 }
             }
         }
-
-
     }
 
-    suspend fun getLastSigning(employeeId: Int, currentUrl: String): Boolean? {
-        return try {
-            val response = repository.searchLastSigning(employeeId, currentUrl)
-            response.type
-        } catch (e: Exception) {
-            errorMessage.value = "Error de red: ${e.message}"
-            null
-        }
+    // Cambiamos a suspend y eliminamos el launch interno
+    fun getLastSigning(employeeId: Int, currentUrl: String, onResult: (LastSigning?) -> Unit) {
+        val call = repository.searchLastSigning(employeeId, currentUrl)
+
+        call.enqueue(object : Callback<LastSigning> {
+            override fun onResponse(call: Call<LastSigning>, response: Response<LastSigning>) {
+                if (response.isSuccessful && response.body() != null) {
+                    onResult(response.body()) // Avisamos que ya tenemos el dato
+                } else {
+                    errorMessage.value = "Error servidor: ${response.code()}"
+                    Log.d("Empleado", "ERROR: ${errorMessage.value} (316)")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<LastSigning>, t: Throwable) {
+                errorMessage.value="Fallo red: ${t.message}"
+                Log.d("Empleado", "ERROR: ${errorMessage.value} (323)")
+                onResult(null)
+            }
+        })
     }
 
     fun onSigningConfirmed() {  //funcion para fichar y cambiar el estado de fichaje
@@ -311,6 +351,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                 // si da error se devuelve null
                 override fun onFailure(call: Call<CheckDoubleSigning>, t: Throwable) {
                     errorMessage.value = "Error de red: ${t.message}"
+                    Log.d("Empleado", "ERROR: ${errorMessage.value} (327)")
                     onResult(null)
                 }
             })
@@ -390,6 +431,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     t: Throwable
                 ){
                     errorMessage.value = "Error de red: ${t.message}"
+                    Log.d("Empleado", "ERROR: ${errorMessage.value} (407)")
                     onResult(null)
                 }
             })
@@ -423,10 +465,9 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                 RetrofitClient.getOdooApi(currentUrl).logAttendance(request)
                 employee.isSigned = isEntry
             } catch (e: Exception) {
-                println("Error al guardar los datos en attendance: ${e.message}")
+                Log.d("Empleado", "ERROR: ${errorMessage.value} (441)")
 
             }
-            Log.d("HOLA", "final: ${employeeInfo.value}")
         }
     }
 }
