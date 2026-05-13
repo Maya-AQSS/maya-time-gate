@@ -35,7 +35,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     var doubleSignInfo = MutableLiveData<CheckDoubleSigning?>()
     val lastSessionInfo = MutableLiveData<LastSession?>()
     val errorMessage = MutableLiveData<String?>()
-    
+
 
     //HashMap para guardar la informacion de los empleados dependiendo de su identificador de fihcajes
     private val hashMapRfid: HashMap<String, EmployeeResponse> = hashMapOf()

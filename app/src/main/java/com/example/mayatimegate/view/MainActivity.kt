@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
                                     restoreState = true
                                 }
                             },
-
+                            viewModel = settingsViewModel
                         )
                     }
 

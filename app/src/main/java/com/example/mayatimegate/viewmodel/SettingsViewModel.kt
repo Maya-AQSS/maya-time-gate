@@ -29,6 +29,16 @@ class SettingsViewModel( //SettingsViewModel
         viewModelScope.launch { repository.setDeviceName(newName) }
     }
 
+    val adminPass = repository.adminPass.stateIn( //variable que guarda la url de odoo
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = "Cargando..."
+    )
+
+    fun updateAdminPass(newName: String) { //Funcion que actualiza la url de odoo
+        viewModelScope.launch { repository.setAdminPass(newName) }
+    }
+
     val urlName = repository.urlName.stateIn( //variable que guarda la url de odoo
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
