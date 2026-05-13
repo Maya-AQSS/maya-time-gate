@@ -149,13 +149,17 @@ fun ConfigurationCompose(
             Spacer(Modifier.size(20.dp))
             DeviceName(viewModel, focusManager, onActivity)
             Spacer(Modifier.size(20.dp))
+            AdminPass(viewModel, focusManager, onActivity)
+            Spacer(Modifier.size(20.dp))
             OdooURL(viewModel, focusManager, onActivity)
             Spacer(Modifier.size(20.dp))
+
 
         }
 
     }
 }
+
 /**
  * Titulo de la vista
  */
@@ -230,6 +234,61 @@ fun DeviceName(viewModel: SettingsViewModel, focusManager: FocusManager, onActiv
         singleLine = true
     )
 }
+
+/**
+ * Compose que muestra la contraseña del administrador
+ */
+
+@Composable
+fun AdminPass(viewModel: SettingsViewModel, focusManager: FocusManager, onActivity: () -> Unit){
+    // Control de Nombre del Dispositivo
+    val adminPassSaved by viewModel.adminPass.collectAsState()
+
+    var localAdminPass by remember { mutableStateOf("") }
+
+    //Funciones para guardar el texto y optimizar DataStore
+
+    LaunchedEffect(adminPassSaved) {
+        localAdminPass = adminPassSaved
+    }
+
+    LaunchedEffect(localAdminPass) {
+        snapshotFlow { localAdminPass }
+            .debounce(300)
+            .distinctUntilChanged()
+            .collect {
+                viewModel.updateAdminPass(it)
+                onActivity()
+            }
+    }
+
+    OutlinedTextField( //Textfiel para introducir el nombre del dispositivo
+        modifier = Modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus()
+                })
+            },
+
+        value = localAdminPass,
+        onValueChange = {
+            localAdminPass = it
+        },
+
+        label = { Text("Contraseña del Administrador") },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = Color.Black,
+            unfocusedTextColor = Color.Black,
+            focusedLabelColor = Color(0xFF0D6DFB),
+            unfocusedLabelColor = Color.DarkGray,
+            focusedBorderColor = Color(0xFF0D6DFB),
+            unfocusedBorderColor = Color.DarkGray
+        ),
+        singleLine = true
+    )
+}
+
 /**
  * Compose que muestra un textField con la url a odoo
  */
