@@ -53,7 +53,7 @@ fun LoginView(
         )
     }
 }
-
+        
 /**
  * Contenedor principal que organiza los elementos visuales de la pantalla de inicio.
  */
