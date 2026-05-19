@@ -241,23 +241,13 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
         // llamada a la primera funcion lambda para saber si se ficha tarde
         searchLastSession(currentUrl) { sessionResult ->
 
-            if (sessionResult == null || sessionResult.status != "success") {
+            if (sessionResult == null) {
                 errorMessage.value = "Error comprobando ultima sesion"
                 Log.d("Empleado", "ERROR: ${errorMessage.value} (229)")
                 return@searchLastSession
             }
 
             lastSessionInfo.value = sessionResult
-
-            // Si llega tarde, cortamos aquí
-            if (sessionResult.isLate) {
-                val updatedEmployee = employee.copy(
-                    isSigned = newSignedState,
-                    isLate = true
-                )
-                employeeInfo.value = updatedEmployee
-                return@searchLastSession
-            }
 
             // llamada a la segunda funcion lambda para comprobar si el fichaje es doble
             checkDoubleSigning(employeeId, currentUrl) { doubleResult ->
@@ -460,6 +450,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                     location_id = 1
                 )
             )
+            Log.d("Empleado", "DEBUG: ${request} (264)")
             try {
                 //Llamada a la api para enviarle los datos del empleado
                 RetrofitClient.getOdooApi(currentUrl).logAttendance(request)

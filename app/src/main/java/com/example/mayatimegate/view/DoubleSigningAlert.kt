@@ -180,7 +180,7 @@ fun DoubleSigninText() {
     Spacer(Modifier.height(32.dp))
 
     Text(
-        text = "¿Ya pasaron 5 minutos?",
+        text = "¿Quieres volver a fichar?",
         color = Color(0xFF2D2D2D), // Texto oscuro para legibilidad
         style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Bold,
@@ -194,7 +194,7 @@ fun DoubleSigninText() {
         shape = RoundedCornerShape(16.dp)
     ) {
         Text(
-            text = "Fichaste hace menos de 5 minutos",
+            text = "Fichaste hace unos minutos",
             color = Color(0xFF856404), // Un tono mostaza oscuro para contraste
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             style = MaterialTheme.typography.bodyLarge,
