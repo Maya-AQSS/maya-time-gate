@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,8 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -62,10 +66,7 @@ fun ConfirmationView(
             "success" -> {
 
                 handled = true
-
-                if (emp.isLate == true) {
-                    navController.navigate("late_error")
-                } else if (emp.isDoubleSigned == false && emp.isLate == false) {
+                if (emp.isDoubleSigned == false && emp.isLate == false) {
 
                     viewModel.latestSuccessfulSigning = emp.isSigned
 
@@ -161,6 +162,10 @@ fun ConfirmationCompose(
 
             // Texto con información del fichaje
             InformationalText(userName, employee.isSigned)
+
+            if(employee.isLate!!){
+                LateAlert()
+            }
         }
     }
 }
@@ -289,5 +294,44 @@ fun LoadingCompose(){ //Vista mientras se cargan los datos
         )
         Spacer(modifier = Modifier.height(50.dp))
         CircularProgressIndicator()//Circulo de progreso
+    }
+}
+
+@Composable
+fun LateAlert(){
+    Row(
+        modifier = Modifier.padding(12.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Image(
+            painter = painterResource(R.drawable.ic_schedule),
+            contentDescription = "Icono vista tarde",
+            modifier = Modifier.size(120.dp),
+            // Si el recurso es un vector, puedes tintarlo dinámicamente
+            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFFF4D03F))
+        )
+        Spacer(Modifier.height(32.dp))
+        Text(
+            "La ultima sesion ya ha comenzado",
+            style = MaterialTheme.typography.displaySmall,
+            color = Color(0xFFF4D03F)
+        )
+    }
+}
+
+
+@Preview(showBackground = true, widthDp = 700, heightDp = 1100)
+@Composable
+fun prev(){
+    Scaffold(
+        containerColor = Color(0xFFEEECEB)
+    ) { innerPadding ->
+        // Si hay datos del empleado mostramos la confirmación
+        ConfirmationCompose( // Compose principal
+            employee = EmployeeResponse("success", 1, "Santi", "Selva", null, null, null, null, false, isLate = true),
+            modifier = Modifier.padding(innerPadding)
+        )
+
     }
 }
