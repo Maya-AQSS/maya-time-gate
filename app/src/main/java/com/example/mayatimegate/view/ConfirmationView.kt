@@ -66,7 +66,7 @@ fun ConfirmationView(
             "success" -> {
 
                 handled = true
-                if (emp.isDoubleSigned == false && emp.isLate == false) {
+                if (emp.isDoubleSigned == false) {
 
                     viewModel.latestSuccessfulSigning = emp.isSigned
 
@@ -109,7 +109,7 @@ fun ConfirmationView(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
         // Si hay datos del empleado mostramos la confirmación
-        if (employee?.status == "success" && employee?.isDoubleSigned == false && employee?.isLate == false){
+        if (employee?.status == "success" && employee?.isDoubleSigned == false){
             ConfirmationCompose( // Compose principal
                 employee = employee!!,
                 modifier = Modifier.padding(innerPadding)
