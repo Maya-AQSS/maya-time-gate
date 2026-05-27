@@ -37,17 +37,12 @@ import kotlinx.coroutines.delay
  */
 
 @Composable
-fun ManualIdentificationView(
-    navController: NavHostController,
-    onTimeOver: () -> Unit,
-    viewModel: EmployeeViewModel
-) {
-
+fun ManualIdentificationView(navController: NavHostController, onTimeOver: () -> Unit) {
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
         InactivityTimer(
-            8000,
+            8000L,
             onTimeout = onTimeOver,
             modifier = Modifier.padding(innerPadding),
             onBackClick = {
@@ -73,7 +68,7 @@ fun InactivityTimer(
     onTimeout: () -> Unit,
     modifier: Modifier,
     onBackClick: () -> Unit,
-    onManualClick: (String) -> Unit
+    onManualClick: () -> Unit
 
 ) {
     // Usamos un State simple para el reinicio
@@ -110,7 +105,7 @@ fun InactivityTimer(
 fun ManualIdentificationCompose(
     modifier: Modifier,
     onBackClick: () -> Unit,
-    onManualClick: (String) -> Unit,
+    onManualClick: () -> Unit,
     onActivity: () -> Unit
 ) {
     // Estados para almacenar los valores de entrada
@@ -140,7 +135,7 @@ fun ManualIdentificationCompose(
                 isError = dniIsError,
                 onValueReady = { value ->
                     onActivity()
-                    stringDni = value
+                    dni = value
                     // Limpieza dinámica del error si el usuario corrige el dato
                     if (dniIsError && value.length >= 8) dniIsError = false
 
