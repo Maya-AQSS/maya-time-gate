@@ -64,17 +64,14 @@ fun ConfirmationView(
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
-        when {
-            employee?.status == "success" -> {
-                ConfirmationCompose(
-                    employee = employee!!,
-                    modifier = Modifier.padding(innerPadding)
-                )
-            }
-            else -> {
-                // Mientras el status sea null (cargando) o sea "error" (esperando navegación)
+        if (employee != null) {
+            ConfirmationCompose(
+                employee = employee!!,
+                modifier = Modifier.padding(innerPadding)
+            )
+        } else {
+           //Mientras cargan los datos o no los encuentra
                 LoadingCompose()
-            }
         }
     }
 }
