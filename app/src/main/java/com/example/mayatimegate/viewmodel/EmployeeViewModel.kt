@@ -54,7 +54,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
         )
 
         viewModelScope.launch {
-
+            val apiKey = settingsManager.apiKey.first()
             val currentUrl = settingsManager.formattedUrl.first()
             //Si la url es incorrecta no busca y se indica que hay un error
             if (!isValidBaseUrl(currentUrl)) {
@@ -71,11 +71,11 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
             val cachedEmployee = getEmployeeFromHashMap(rfid) //se busca el empleado en el HashMap
 
             if(cachedEmployee != null) { //Si no se encuentra el empleado en memoria
-                handleEmployeeFlow(cachedEmployee, currentUrl)
+                handleEmployeeFlow(cachedEmployee, apiKey, currentUrl)
             }else{
 
                 //Llamada al repositorio para buscar al empleado
-                val call = repository.searchEmployeeByRfid(rfid, currentUrl)
+                val call = repository.searchEmployeeByRfid(rfid, apiKey,currentUrl)
 
                 call.enqueue(object : Callback<EmployeeResponse>{
 
@@ -105,7 +105,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
 
                         serverResponse.rfid = rfid//se guarda el codigo rfid
                         saveEmployee(serverResponse) //se guarda el empleado
-                        handleEmployeeFlow(serverResponse, currentUrl) //se procede al flujo de fichaje
+                        handleEmployeeFlow(serverResponse, apiKey, currentUrl) //se procede al flujo de fichaje
 
 
                     }
@@ -131,7 +131,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
             message = null
         )
         viewModelScope.launch {
-
+            val apiKey = settingsManager.apiKey.first()
             val currentUrl = settingsManager.formattedUrl.first() //se consige la URL
 
             // se valida la URL
@@ -162,9 +162,9 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
             //se busca si el empleado exite en memoria
             val cachedEmployee = getEmployeeFromHashMap(officialDni)
             if (cachedEmployee != null) { //si no es nulo es que existe en memoria
-                handleEmployeeFlow(cachedEmployee, currentUrl) // y se procesa al empleado para fichar
+                handleEmployeeFlow(cachedEmployee,apiKey, currentUrl) // y se procesa al empleado para fichar
             } else { //si no esta en memoria se busca en la api
-                val call = repository.searchEmployeeByDni(officialDni, currentUrl) //se devuelve informacionde la api
+                val call = repository.searchEmployeeByDni(officialDni, apiKey, currentUrl) //se devuelve informacionde la api
 
                 call.enqueue(object : Callback<EmployeeResponse> {
 
@@ -191,7 +191,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                             return
                         }
                         saveEmployee(serverResponse) // se guarda el empleado en memoria
-                        handleEmployeeFlow(serverResponse, currentUrl) // y se procesa para fichar
+                        handleEmployeeFlow(serverResponse, apiKey, currentUrl) // y se procesa para fichar
 
                     }
 
@@ -210,12 +210,12 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     }
 
     // Funcion que optimiza el flujo de fichaje
-    private fun handleEmployeeFlow(employee: EmployeeResponse, currentUrl: String) {
+    private fun handleEmployeeFlow(employee: EmployeeResponse, apiKey:String , currentUrl: String) {
 
         val employeeId = employee.odooId ?: return
 
         //funcion lambda para conseguir el ultimo fichaje del empleado
-        getLastSigning(employeeId, currentUrl) { lastResult ->
+        getLastSigning(employeeId, apiKey, currentUrl) { lastResult ->
 
             if(lastResult != null && lastResult.status == "error"){
                 errorMessage.value = "Error con el estado de fichaje"
@@ -223,13 +223,13 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                 return@getLastSigning
             }
             val last = lastResult?.type ?: false
-            executeSingingLogic(employee, currentUrl, last)
+            executeSingingLogic(employee, apiKey, currentUrl, last)
         }
 
     }
 
     //Funcion que ejecuta el flujo del fichaje
-    fun executeSingingLogic(employee: EmployeeResponse, currentUrl: String, lastResult: Boolean?){
+    fun executeSingingLogic(employee: EmployeeResponse, apiKey: String, currentUrl: String, lastResult: Boolean?){
         val employeeId = employee.odooId
         if (employeeId == null) {
             errorMessage.value = "Empleado sin ID válido"
@@ -239,7 +239,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
         val newSignedState = employee.isSigned
 
         // llamada a la primera funcion lambda para saber si se ficha tarde
-        searchLastSession(currentUrl) { sessionResult ->
+        searchLastSession(apiKey, currentUrl) { sessionResult ->
 
             if (sessionResult == null) {
                 errorMessage.value = "Error comprobando ultima sesion"
@@ -250,7 +250,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
             lastSessionInfo.value = sessionResult
 
             // llamada a la segunda funcion lambda para comprobar si el fichaje es doble
-            checkDoubleSigning(employeeId, currentUrl) { doubleResult ->
+            checkDoubleSigning(employeeId, apiKey, currentUrl) { doubleResult ->
 
                 if (doubleResult == null) {
                     errorMessage.value = "Error comprobando fichaje doble"
@@ -288,8 +288,8 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     }
 
     // Cambiamos a suspend y eliminamos el launch interno
-    fun getLastSigning(employeeId: Int, currentUrl: String, onResult: (LastSigning?) -> Unit) {
-        val call = repository.searchLastSigning(employeeId, currentUrl)
+    fun getLastSigning(employeeId: Int, apiKey: String, currentUrl: String, onResult: (LastSigning?) -> Unit) {
+        val call = repository.searchLastSigning(employeeId, apiKey,currentUrl)
 
         call.enqueue(object : Callback<LastSigning> {
             override fun onResponse(call: Call<LastSigning>, response: Response<LastSigning>) {
@@ -325,10 +325,10 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     }
 
     //funcion lambda que calcula si el fichaje es doble
-    fun checkDoubleSigning(id: Int, currentUrl:String, onResult: (CheckDoubleSigning?) -> Unit) {
+    fun checkDoubleSigning(id: Int, apiKey:String, currentUrl:String, onResult: (CheckDoubleSigning?) -> Unit) {
 
         // se llama a la api que calcula si el fichaje ha sido doble
-        repository.checkDoubleSigning(id, currentUrl)
+        repository.checkDoubleSigning(id, apiKey,currentUrl)
             .enqueue(object : Callback<CheckDoubleSigning> {
 
                 override fun onResponse(
@@ -405,8 +405,8 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
     }
 
     // funcion lambda para comprobar si se ha fichado tarde
-    fun searchLastSession(currentUrl: String, onResult: (LastSession?) -> Unit){
-        repository.searchLastSession(currentUrl)
+    fun searchLastSession(apiKey:String, currentUrl: String, onResult: (LastSession?) -> Unit){
+        repository.searchLastSession(apiKey, currentUrl)
             .enqueue(object : Callback<LastSession>{
                 override fun onResponse(
                     call: Call<LastSession>,
@@ -432,6 +432,10 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
         viewModelScope.launch {
             // se captura la URL
             val currentUrl = settingsManager.formattedUrl.first()
+            val apiKey = settingsManager.apiKey.first()
+            //api key
+
+
             //Comprueba que el id y el estado del empleado no sean nulos
             val employee = employeeInfo.value ?: return@launch
             val employeeId = employee.odooId ?: return@launch
@@ -453,7 +457,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
             Log.d("Empleado", "DEBUG: ${request} (264)")
             try {
                 //Llamada a la api para enviarle los datos del empleado
-                RetrofitClient.getOdooApi(currentUrl).logAttendance(request)
+                RetrofitClient.getOdooApi(currentUrl).logAttendance(apiKey,request)
                 employee.isSigned = isEntry
             } catch (e: Exception) {
                 Log.d("Empleado", "ERROR: ${errorMessage.value} (441)")

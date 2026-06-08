@@ -9,29 +9,29 @@ import retrofit2.Call
 class EmployeeRepository {//Repositorio que implementa las demas clases para realizar la busqueda
     //funciones que devuelven la informacion del empleado
 
-    fun searchEmployeeByRfid(rfid: String, baseUrl: String): Call<EmployeeResponse> {
+    fun searchEmployeeByRfid(rfid: String, apiKey: String, baseUrl: String): Call<EmployeeResponse> {
         // Obtenemos la instancia dinámica usando la URL que nos pasan
         val api = RetrofitClient.getOdooApi(baseUrl)
-        return api.getEmployeeByRfid(rfid)
+        return api.getEmployeeByRfid(rfid, apiKey)
     }
 
-    fun searchEmployeeByDni(dni: String, baseUrl: String): Call<EmployeeResponse> {
+    fun searchEmployeeByDni(dni: String, apiKey: String, baseUrl: String): Call<EmployeeResponse> {
         val api = RetrofitClient.getOdooApi(baseUrl)
-        return api.getEmployeeByDni(dni)
+        return api.getEmployeeByDni(dni, apiKey)
     }
 
-    fun checkDoubleSigning(id: Int, baseUrl: String): Call<CheckDoubleSigning>{
+    fun checkDoubleSigning(id: Int, apiKey: String, baseUrl: String): Call<CheckDoubleSigning>{
         val api = RetrofitClient.getOdooApi(baseUrl)
-        return api.checkDoubleSigning(id)
+        return api.checkDoubleSigning(id, apiKey)
     }
 
-    fun searchLastSession(baseUrl:String): Call<LastSession>{
+    fun searchLastSession(apiKey: String, baseUrl:String): Call<LastSession>{
         val api = RetrofitClient.getOdooApi(baseUrl)
-        return api.getLastSession()
+        return api.getLastSession(apiKey)
     }
 
-    fun searchLastSigning(id: Int, baseUrl: String): Call<LastSigning> {
+    fun searchLastSigning(id: Int, apiKey: String, baseUrl: String): Call<LastSigning> {
         val api = RetrofitClient.getOdooApi(baseUrl)
-        return api.getLastSigning(id)
+        return api.getLastSigning(id, apiKey)
     }
 }
