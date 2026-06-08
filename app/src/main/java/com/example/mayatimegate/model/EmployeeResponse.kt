@@ -17,9 +17,4 @@ data class EmployeeResponse(
     var isSigned: Boolean = false,
     var isDoubleSigned: Boolean? = null,
     var isLate: Boolean? = null
-){
-    /*fun changeSignedState(){
-        this.isSigned =  !isSigned
-    }*/
-
-}
+)

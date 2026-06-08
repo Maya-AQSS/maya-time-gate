@@ -291,11 +291,11 @@ fun AdminPass(viewModel: SettingsViewModel, focusManager: FocusManager, onActivi
 }
 
 /**
- * Text field que muestra el nombre del dispositivo
+ * Text field que muestra la api key de odoo
  */
 @Composable
 fun ApiKey(viewModel: SettingsViewModel, focusManager: FocusManager, onActivity: () -> Unit){
-    // Control de Nombre del Dispositivo
+    // Control de la api key
     val apiKeySaved by viewModel.apiKey.collectAsState()
 
     var localApiKey by remember { mutableStateOf("") }

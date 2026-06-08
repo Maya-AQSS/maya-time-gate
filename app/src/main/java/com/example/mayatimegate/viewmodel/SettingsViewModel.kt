@@ -45,7 +45,7 @@ class SettingsViewModel( //SettingsViewModel
         initialValue = "Cargando..."
     )
 
-    fun updateApiKey(newName: String) { //Funcion que actualiza la url de odoo
+    fun updateApiKey(newName: String) { //Funcion que actualiza la api key de odoo
         viewModelScope.launch { repository.setApiKey(newName) }
     }
 
