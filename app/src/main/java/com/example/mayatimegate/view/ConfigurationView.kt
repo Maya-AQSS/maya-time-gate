@@ -151,9 +151,10 @@ fun ConfigurationCompose(
             Spacer(Modifier.size(20.dp))
             AdminPass(viewModel, focusManager, onActivity)
             Spacer(Modifier.size(20.dp))
+            ApiKey(viewModel, focusManager, onActivity)
+            Spacer(Modifier.size(20.dp))
             OdooURL(viewModel, focusManager, onActivity)
             Spacer(Modifier.size(20.dp))
-
 
         }
 
@@ -277,6 +278,59 @@ fun AdminPass(viewModel: SettingsViewModel, focusManager: FocusManager, onActivi
         },
 
         label = { Text("Contraseña del Administrador") },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = Color.Black,
+            unfocusedTextColor = Color.Black,
+            focusedLabelColor = Color(0xFF0D6DFB),
+            unfocusedLabelColor = Color.DarkGray,
+            focusedBorderColor = Color(0xFF0D6DFB),
+            unfocusedBorderColor = Color.DarkGray
+        ),
+        singleLine = true
+    )
+}
+
+/**
+ * Text field que muestra el nombre del dispositivo
+ */
+@Composable
+fun ApiKey(viewModel: SettingsViewModel, focusManager: FocusManager, onActivity: () -> Unit){
+    // Control de Nombre del Dispositivo
+    val apiKeySaved by viewModel.apiKey.collectAsState()
+
+    var localApiKey by remember { mutableStateOf("") }
+
+    //Funciones para guardar el texto y optimizar DataStore
+
+    LaunchedEffect(apiKeySaved) {
+        localApiKey = apiKeySaved
+    }
+
+    LaunchedEffect(localApiKey) {
+        snapshotFlow { localApiKey }
+            .debounce(300)
+            .distinctUntilChanged()
+            .collect {
+                viewModel.updateApiKey(it)
+                onActivity()
+            }
+    }
+
+    OutlinedTextField( //Textfiel para introducir el nombre del dispositivo
+        modifier = Modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus()
+                })
+            },
+
+        value = localApiKey,
+        onValueChange = {
+            localApiKey = it
+        },
+
+        label = { Text("Api key") },
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = Color.Black,
             unfocusedTextColor = Color.Black,

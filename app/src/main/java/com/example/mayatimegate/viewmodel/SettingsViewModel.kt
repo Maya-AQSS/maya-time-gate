@@ -39,6 +39,16 @@ class SettingsViewModel( //SettingsViewModel
         viewModelScope.launch { repository.setAdminPass(newName) }
     }
 
+    val apiKey = repository.apiKey.stateIn( //variable que guarda la api key de odoo
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = "Cargando..."
+    )
+
+    fun updateApiKey(newName: String) { //Funcion que actualiza la url de odoo
+        viewModelScope.launch { repository.setApiKey(newName) }
+    }
+
     val urlName = repository.urlName.stateIn( //variable que guarda la url de odoo
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -55,20 +65,6 @@ class SettingsViewModel( //SettingsViewModel
         application.contentResolver,
         Settings.Secure.ANDROID_ID
     ) ?: "Desconocido"
-
-    fun realizarAccionEnOdoo() {
-        viewModelScope.launch {
-            try {
-                // Obtenemos la API con la URL actual del StateFlow
-                val api = RetrofitClient.getOdooApi(urlName.value)
-
-                // Aquí podrías enviar el androidId en la petición si Odoo lo requiere
-                // val response = api.login(androidId, ...)
-            } catch (e: Exception) {
-                // Manejar error de conexión
-            }
-        }
-    }
 }
 
 //Clase factory que crea una instancia de EmployeeViewModel

@@ -26,6 +26,7 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import coil.compose.AsyncImage
 import com.example.mayatimegate.model.EmployeeResponse
+import com.example.mayatimegate.utils.SoundManager
 import com.example.mayatimegate.viewmodel.EmployeeViewModel
 
 /**
@@ -37,6 +38,8 @@ import com.example.mayatimegate.viewmodel.EmployeeViewModel
 fun ConfirmationView(
     onTimeOver: () -> Unit,
     viewModel: EmployeeViewModel,
+    navController: NavHostController,
+    soundManager: SoundManager,
 ) {
 
     val employee by viewModel.employeeInfo.observeAsState()

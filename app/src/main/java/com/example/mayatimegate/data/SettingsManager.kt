@@ -14,6 +14,8 @@ class SettingsManager(private val context: Context) {
     companion object { //informacion guardada en la DataStore
         val DEVICE_NAME_KEY = stringPreferencesKey("device_name")
         val ADMIN_PASS = stringPreferencesKey("admin_pass")
+
+        val API_KEY = stringPreferencesKey("api_key")
         val URL_KEY = stringPreferencesKey("url_odoo")
     }
 
@@ -35,6 +37,16 @@ class SettingsManager(private val context: Context) {
     suspend fun setAdminPass(name: String) {
         context.dataStore.edit { preferences ->
             preferences[ADMIN_PASS] = name
+        }
+    }
+
+    val apiKey: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[API_KEY] ?: "null"
+    }
+
+    suspend fun setApiKey(name: String) {
+        context.dataStore.edit { preferences ->
+            preferences[API_KEY] = name
         }
     }
 
