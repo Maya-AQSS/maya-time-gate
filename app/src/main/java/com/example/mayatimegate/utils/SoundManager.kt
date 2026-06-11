@@ -23,7 +23,7 @@ class SoundManager(context: Context) {
             .setAudioAttributes(audioAttributes)
             .build()
 
-        soundMap["success-in"] = soundPool.load(context, R.raw.success4, 1)
+        soundMap["success-in"] = soundPool.load(context, R.raw.success, 1)
         soundMap["success-out"] = soundPool.load(context, R.raw.check_out, 1)
         soundMap["error"] = soundPool.load(context, R.raw.error, 1)
 
