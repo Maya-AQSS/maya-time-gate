@@ -161,6 +161,7 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
 
             //se busca si el empleado exite en memoria
             val cachedEmployee = getEmployeeFromHashMap(officialDni)
+            Log.d("Empleado", "DEBUG: ${apiKey}")
             if (cachedEmployee != null) { //si no es nulo es que existe en memoria
                 handleEmployeeFlow(cachedEmployee,apiKey, currentUrl) // y se procesa al empleado para fichar
             } else { //si no esta en memoria se busca en la api
@@ -432,9 +433,8 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
         viewModelScope.launch {
             // se captura la URL
             val currentUrl = settingsManager.formattedUrl.first()
-            val apiKey = settingsManager.apiKey.first()
             //api key
-
+            val apiKey = settingsManager.apiKey.first()
 
             //Comprueba que el id y el estado del empleado no sean nulos
             val employee = employeeInfo.value ?: return@launch
@@ -460,7 +460,8 @@ class EmployeeViewModel( //Clase ViewModel para gestionar la logica de los emple
                 RetrofitClient.getOdooApi(currentUrl).logAttendance(apiKey,request)
                 employee.isSigned = isEntry
             } catch (e: Exception) {
-                Log.d("Empleado", "ERROR: ${errorMessage.value} (441)")
+                errorMessage.value = "Error al fichar: ${e.localizedMessage ?: "Fallo desconocido"}"
+                Log.d("Empleado", "ERROR: ${e.message} (465)")
 
             }
         }
