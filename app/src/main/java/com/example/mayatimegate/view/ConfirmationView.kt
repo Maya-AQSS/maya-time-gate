@@ -319,19 +319,3 @@ fun LateAlert(){
         )
     }
 }
-
-
-@Preview(showBackground = true, widthDp = 700, heightDp = 1100)
-@Composable
-fun prev(){
-    Scaffold(
-        containerColor = Color(0xFFEEECEB)
-    ) { innerPadding ->
-        // Si hay datos del empleado mostramos la confirmación
-        ConfirmationCompose( // Compose principal
-            employee = EmployeeResponse("success", 1, "Santi", "Selva", null, null, null, null, false, isLate = true),
-            modifier = Modifier.padding(innerPadding)
-        )
-
-    }
-}
