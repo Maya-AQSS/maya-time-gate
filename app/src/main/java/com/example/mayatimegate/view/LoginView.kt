@@ -1,10 +1,20 @@
-package com.example.mayatimegate.views
+package com.example.mayatimegate.view
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,34 +25,46 @@ import java.util.Locale
 import androidx.compose.ui.res.painterResource
 import com.example.mayatimegate.R
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.navigation.NavHostController
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.mayatimegate.viewmodel.SettingsViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 /**
  * Punto de entrada principal de la aplicación (Pantalla de Fichaje).
  */
 @Composable
-fun LoginView(navController: NavHostController) {
+fun LoginView(
+    onManualClick: () -> Unit,
+    onConfigClick: () -> Unit,
+    viewModel: SettingsViewModel
+) {
+
     Scaffold(
         containerColor = Color(0xFFEEECEB) // Fondo neutro para resaltar la tarjeta central
     ) { innerPadding ->
         LoginCompose(
             modifier = Modifier.padding(innerPadding),
-            onManualClick = {
-                // Navegación hacia el formulario manual manteniendo el estado de la pila
-                navController.navigate("manual_id") {
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            }
+            onManualClick,
+            onConfigClick,
+            viewModel
         )
     }
 }
-
+        
 /**
  * Contenedor principal que organiza los elementos visuales de la pantalla de inicio.
  */
 @Composable
-fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
+fun LoginCompose(
+    modifier: Modifier,
+    onManualClick: () -> Unit,
+    onConfigClick: () -> Unit,
+    viewModel: SettingsViewModel
+) {
+
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -50,10 +72,13 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
+
+        SettingsButton(onConfigClick, viewModel)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(40.dp),
+                .padding(horizontal = 40.dp, vertical = 15.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -65,15 +90,15 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            CurrentTime() // Visualización de hora en tiempo real
+            CurrentTime()
 
             Spacer(modifier = Modifier.height(15.dp))
 
-            CurrentDate() // Fecha actual formateada
+            CurrentDate()
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            CardOption() // Instrucción visual para el uso de tarjeta NFC/RFID
+            CardOption()
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 16.dp, horizontal = 25.dp),
@@ -81,11 +106,117 @@ fun LoginCompose(modifier: Modifier, onManualClick: () -> Unit) {
                 color = Color.Gray.copy(alpha = 0.3f)
             )
 
-            ManualOption(onClick = onManualClick) // Acceso alternativo por teclado
+            ManualOption(onClick = onManualClick)
         }
+    }
+
+}
+
+@Composable
+fun SettingsButton(onConfigClick: () -> Unit, viewModel: SettingsViewModel) {
+    var showDialog by remember { mutableStateOf(false) }
+    var textState by remember { mutableStateOf("") }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+
+        IconButton(
+            //onClick = onConfigClick,
+            onClick = { showDialog = true},
+            modifier = Modifier.focusProperties { canFocus = false },
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_rounded_settings),
+                contentDescription = "Abrir configuracion",
+                Modifier.size(35.dp),
+                tint = Color(0xFF313131),
+            )
+        }
+    }
+    if (showDialog) {
+        AlertView(
+            textState = textState,
+            onTextChange = { textState = it },
+            onDismiss = { showDialog = false },
+            onSuccess = {
+                showDialog = false
+                onConfigClick()
+            },
+            viewModel = viewModel
+        )
     }
 }
 
+@Composable
+fun AlertView(
+    textState: String,
+    onTextChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSuccess: () -> Unit,
+    viewModel: SettingsViewModel
+) {
+    var isError by remember { mutableStateOf(false) }
+    val pass = viewModel.adminPass.collectAsState().value
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Introduce contraseña de Administrador")
+        },
+
+        text = {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ){
+                OutlinedTextField(
+                    value = textState,
+                    onValueChange = {
+                        onTextChange(it)
+                        isError = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Contraseña") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { /* opcional */ }
+                    )
+                )
+                if (isError) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Contraseña incorrecta",
+                        color = Color.Red
+                    )
+                }
+            }
+        },
+        confirmButton = {
+
+            Button(onClick = {
+                if (textState == pass) {
+                    onSuccess()
+                }else{
+                 isError = true
+                }
+            }) {
+                Text("Acceder")
+            }
+        },
+
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
 /**
  * Integra un TextClock nativo de Android para asegurar precisión y bajo consumo de recursos.
  */
@@ -154,6 +285,7 @@ fun CardOption() {
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.Gray
             )
+
         }
     }
 }
@@ -167,7 +299,8 @@ fun ManualOption(onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp, 16.dp),
+            .padding(8.dp, 16.dp)
+            .focusProperties { canFocus = false },
         colors = CardDefaults.cardColors(containerColor = Color(0xFF34495E)), // Color de contraste oscuro
     ) {
         Row(
@@ -191,4 +324,5 @@ fun ManualOption(onClick: () -> Unit) {
             )
         }
     }
+
 }

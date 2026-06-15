@@ -1,4 +1,4 @@
-package com.example.mayatimegate.views
+package com.example.mayatimegate.view
 
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -27,19 +29,28 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.mayatimegate.R
+import com.example.mayatimegate.viewmodel.EmployeeViewModel
 import kotlinx.coroutines.delay
+
 
 /**
  * Vista de Identificación Manual.
  * Permite al usuario fichar introduciendo DNI y contraseña si no dispone de tarjeta.
  */
+
 @Composable
-fun ManualIdentificationView(navController: NavHostController, onTimeOver: () -> Unit) {
+fun ManualIdentificationView(
+    navController: NavHostController,
+    onTimeOver: () -> Unit,
+    viewModel: EmployeeViewModel
+) {
+    val timeout = 8000L
+
     Scaffold(
         containerColor = Color(0xFFEEECEB)
     ) { innerPadding ->
         InactivityTimer(
-            8000L,
+            timeout,
             onTimeout = onTimeOver,
             modifier = Modifier.padding(innerPadding),
             onBackClick = {
@@ -48,7 +59,8 @@ fun ManualIdentificationView(navController: NavHostController, onTimeOver: () ->
                     navController.popBackStack()
                 }
             },
-            onManualClick = {
+            onManualClick = { stringDni->
+                viewModel.searchByDni(stringDni)
                 navController.navigate("confirmation") {
                     launchSingleTop = true
                     restoreState = true
@@ -64,7 +76,7 @@ fun InactivityTimer(
     onTimeout: () -> Unit,
     modifier: Modifier,
     onBackClick: () -> Unit,
-    onManualClick: () -> Unit
+    onManualClick: (String) -> Unit
 
 ) {
     // Usamos un State simple para el reinicio
@@ -79,9 +91,12 @@ fun InactivityTimer(
         modifier = Modifier
             .fillMaxSize()
             .pointerInput(Unit) {
-                awaitEachGesture {
-                    awaitFirstDown() // Detecta el primer contacto
-                    interactionCount++ // Reinicia el timer
+                awaitPointerEventScope {
+                    while (true) {
+                        // PointerEventPass.Initial permite ver el evento ANTES que los hijos
+                        awaitPointerEvent(PointerEventPass.Initial)
+                        interactionCount++
+                    }
                 }
             }
     ) {
@@ -101,11 +116,11 @@ fun InactivityTimer(
 fun ManualIdentificationCompose(
     modifier: Modifier,
     onBackClick: () -> Unit,
-    onManualClick: () -> Unit,
+    onManualClick: (String) -> Unit,
     onActivity: () -> Unit
 ) {
     // Estados para almacenar los valores de entrada
-    var dni by remember { mutableStateOf("") }
+    var stringDni by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
 
     // Estados para controlar la visualización de errores
@@ -114,8 +129,16 @@ fun ManualIdentificationCompose(
 
     val focusManager = LocalFocusManager.current
     Card(
-        modifier = modifier.fillMaxSize().padding(32.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus() // Esto quita el cursor y cierra el teclado
+                })
+            },
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         BackRow(onBackClick = onBackClick)
 
@@ -131,7 +154,7 @@ fun ManualIdentificationCompose(
                 isError = dniIsError,
                 onValueReady = { value ->
                     onActivity()
-                    dni = value
+                    stringDni = value
                     // Limpieza dinámica del error si el usuario corrige el dato
                     if (dniIsError && value.length >= 8) dniIsError = false
 
@@ -159,11 +182,11 @@ fun ManualIdentificationCompose(
             RegisterButton(
                 onClick = {
                     // Lógica de validación antes de proceder al registro
-                    if (dni.length >= 8 && pass.isNotEmpty()) {
-                        onManualClick()
+                    if (stringDni.length >= 8 && pass.isNotEmpty()) {
+                        onManualClick(stringDni)
                     } else {
                         // Activación de estados de error para feedback visual
-                        dniIsError = dni.length < 8
+                        dniIsError = stringDni.length != 8
                         passIsError = pass.isEmpty()
                     }
                 }
@@ -253,7 +276,7 @@ fun IdentityTextField(
         },
         isError = isError,
         supportingText = {
-            if (isError) Text("El DNI debe tener al menos 8 números")
+            if (isError) Text("El DNI debe tener 8 números")
         },
         keyboardOptions = keyboardOptions,
         keyboardActions = KeyboardActions(
@@ -306,7 +329,6 @@ fun PassTextField(isError: Boolean, onValueReady: (String) -> Unit, focusManager
         keyboardActions = KeyboardActions(
             onDone = {
                 focusManager.clearFocus() // Esconde el teclado
-                // Opcional: podrías llamar aquí a la lógica de validación
             }
         ),
         trailingIcon = {
@@ -347,7 +369,7 @@ fun PassTextField(isError: Boolean, onValueReady: (String) -> Unit, focusManager
  * Botón de confirmación de registro.
  */
 @Composable
-fun RegisterButton(onClick: () -> Unit) {
+fun RegisterButton(onClick:() -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(8.dp),
